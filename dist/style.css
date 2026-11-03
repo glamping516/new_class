@@ -12,3 +12,16 @@
 #clearanceBtn{font-size:10px;gap:5px}.clearance-toolbar small{width:100%}
 
 .add-object-button{font-size:10px;padding:7px 8px;border:1px solid #dbe7df;border-radius:5px;background:#f2f7f2;color:#488263;margin-left:auto}.add-object-button svg{height:13px;width:13px}.sidebar-top{gap:7px}.inventory-limit{font-size:9px;color:#8e9d91;display:flex;align-items:center;gap:5px;margin:0 0 11px}.inventory-limit input{accent-color:var(--green);width:11px;height:11px;margin:0}.bottom-dock .inventory-limit{grid-column:1;grid-row:2;align-self:end;font-size:8px}.bottom-dock .add-object-button{font-size:0;padding:6px}.bottom-dock .sidebar-top{gap:4px}.bottom-dock .sidebar-top>div{min-width:0}
+
+/* Expanded furniture library and projector controls. */
+.categories{flex-wrap:wrap;gap:6px;margin:13px 0}.categories button{padding:6px 8px}
+#screenToggleBtn{font-size:10px;gap:5px;color:#39745e;background:#f6fbf7;border-color:#d5e6d9}
+.stage-options{flex-wrap:wrap;justify-content:flex-end}.stage-top{align-items:flex-start}
+.screen-settings,.board-settings{margin-top:15px;padding-top:12px;border-top:1px solid var(--line)}
+.screen-actions{display:flex;gap:6px}.screen-actions button{flex:1;border:1px solid #dde8df;border-radius:6px;padding:8px 5px;font-size:10px;background:#f8faf7;color:#67816d}
+.screen-actions button.active{background:#e8f2e9;color:#286b4b;border-color:#bbd2bf}.screen-actions svg{width:14px;height:14px}
+.screen-settings p,.board-settings p{font-size:9px;color:#98a399;line-height:1.8;margin:9px 0 0}
+.board-settings>strong{display:block;font-size:10px;margin-bottom:9px}.board-settings .button{width:100%;color:#467b59;background:#f4f8f2}
+.product-source{display:block;font-size:9px;color:#55856c;text-decoration:none;margin-top:13px;line-height:1.7}.product-source small{display:block;font-size:8px;color:#98a59c}.product-source:hover{text-decoration:underline}
+.bottom-dock .categories{gap:5px}.bottom-dock .categories button{font-size:9px;padding:5px 7px}
+@media(max-width:1000px){#screenToggleBtn{font-size:9px}.stage-options{max-width:100%}}

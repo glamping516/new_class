@@ -1,0 +1,40 @@
+const planned=(type,name,dims,category,model,options={})=>({type,name,dims,category,model,count:Infinity,photo:null,note:'배치 검토용 · 치수 수정',...options});
+const boardSource='https://www.dreamoffice.com/shop/goods_list.php?ps_ctid=01240200';
+export const EXTRA_CATALOG=[
+ planned('sofaSingle','1인 소파 · 80',[.8,.78,.78],'lounge','sofa',{seats:1,color:'#a4b2a3'}),
+ planned('sofaCompact','컴팩트 2인 소파 · 120',[1.2,.75,.78],'lounge','sofa',{seats:2,color:'#c9bca9'}),
+ planned('sofaDouble','2인 소파 · 140',[1.4,.8,.8],'lounge','sofa',{seats:2,color:'#929eaa'}),
+ planned('sofaTriple','3인 소파 · 180',[1.8,.8,.8],'lounge','sofa',{seats:3,color:'#b1b5ac'}),
+ planned('coffeeRound50','원형 탁상 · Ø50',[.5,.5,.45],'lounge','roundTable',{color:'#d6bea0',legs:3}),
+ planned('coffeeSquare60','사각 탁상 · 60',[.6,.6,.45],'lounge','squareTable',{color:'#d6bea0',legs:4}),
+ planned('coffeeRectangle80','직사각 탁상 · 80×50',[.8,.5,.43],'lounge','squareTable',{color:'#d6bea0',legs:4}),
+ planned('sideTable40','사이드 테이블 · Ø40',[.4,.4,.55],'lounge','roundTable',{color:'#ebede5',pedestal:true}),
+ planned('consultRound60','2인 원형 상담 · Ø60',[.6,.6,.73],'consult','roundTable',{color:'#e8e6dc',pedestal:true}),
+ planned('consultRound80','원형 상담 · Ø80',[.8,.8,.73],'consult','roundTable',{color:'#e8e6dc',pedestal:true}),
+ planned('consultRound100','4인 원형 상담 · Ø100',[1,1,.73],'consult','roundTable',{color:'#d7c7aa',pedestal:true}),
+ planned('consultSquare80','정사각 상담 · 80×80',[.8,.8,.73],'consult','squareTable',{color:'#e8e6dc',legs:4}),
+ planned('consultRect120','상담 테이블 · 120×60',[1.2,.6,.73],'consult','squareTable',{color:'#d7c7aa',legs:4}),
+ planned('consultRect140','4인 상담 · 140×70',[1.4,.7,.73],'consult','squareTable',{color:'#e8e6dc',legs:4}),
+ planned('chairShell','화이트 쉘 체어',[.48,.52,.81],'seating','cleanChair',{style:'shell',color:'#e8e9e0'}),
+ planned('chairFabric','패브릭 상담 의자',[.52,.56,.82],'seating','cleanChair',{style:'fabric',color:'#a3b1a4'}),
+ planned('chairWood','우드 체어',[.46,.5,.79],'seating','cleanChair',{style:'wood',color:'#c8ac87'}),
+ planned('chairSled','슬레드 회의 의자',[.53,.58,.82],'seating','cleanChair',{style:'sled',color:'#637376'}),
+ planned('chairArm','팔걸이 상담 의자',[.6,.6,.8],'seating','cleanChair',{style:'arm',color:'#b9b3a5'}),
+ planned('stoolRound','원형 스툴',[.35,.35,.46],'seating','stool',{color:'#b5c0b0'}),
+ planned('binSlim','슬림 뚜껑 쓰레기통',[.25,.35,.5],'equipment','bin',{style:'slim',color:'#e2e5df'}),
+ planned('binPedal','원형 페달 쓰레기통',[.3,.3,.48],'equipment','bin',{style:'pedal',color:'#c2cbca'}),
+ planned('binRecycle','3구 분리수거함',[.72,.32,.6],'equipment','bin',{style:'recycle',color:'#e1e5df'}),
+ planned('storageLow','낮은 수납장 · 80',[.8,.4,.8],'equipment','storage',{style:'doors',color:'#e3e5dc'}),
+ planned('pantryCounter','탕비 수납대 · 120',[1.2,.45,.85],'equipment','storage',{style:'counter',color:'#e7e9e2'}),
+ planned('bookcaseLow','오픈 책장 · 80',[.8,.3,1.2],'equipment','storage',{style:'open',color:'#d3c0a0'}),
+ planned('printerStand','프린터 받침대',[.6,.45,.7],'equipment','storage',{style:'printer',color:'#d3c0a0'}),
+ planned('waterDispenser','스탠드 정수기',[.32,.35,1.02],'equipment','water',{color:'#e5e9e5'}),
+ planned('coatStand','스탠드 옷걸이',[.45,.45,1.7],'equipment','coat',{color:'#82938a'}),
+ planned('mobilePrivacy','상담 공간 파티션 · 90',[.9,.35,1.5],'partition','privacy',{color:'#a8b5aa'}),
+ ...[[90,60],[120,90],[150,90],[180,90],[180,120],[240,120]].map(([w,h])=>planned(
+  `whiteboardWall${w}x${h}`,`벽걸이 보드 · ${w}×${h}`,[w/100,.035,h/100],'whiteboard','whiteboard',
+  {wallMounted:true,defaultElevation:h===120?.95:1.1,note:'제품 표기 규격 · 두께 추정',sourceUrl:boardSource,sourceName:'두문 · 드림오피스 판매 규격',boardFace:[w/100,h/100]}
+ )),
+ planned('whiteboardMobile120','이동식 보드 · 판면 120×90',[1.25,.6,1.8],'whiteboard','mobileBoard',
+  {boardFace:[1.2,.9],note:'판면 제품 규격 · 받침 추정',sourceUrl:'https://hd2.co.kr/product/detail.html?product_no=35113',sourceName:'현대오피스 · 판면 1200×900mm'})
+];
