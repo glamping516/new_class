@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f5f6f8"><meta name="description" content="사진과 실측 치수로 설계하는 정보화교육장 3D 배치 스튜디오. 가구 드래그, 스마트 정렬, 45cm 타일, 배치 저장.">
+<title>정보화교육장 · 배치 스튜디오</title>
+<link rel="stylesheet" href="./style.css">
+<script type="importmap">{"imports":{"three":"./vendor/three.module.min.js","three/addons/controls/OrbitControls.js":"./vendor/OrbitControls.js"}}</script>
+</head>
+<body>
+<div id="app">
+ <header class="topbar">
+  <a class="brand" href="#" aria-label="배치 스튜디오 홈"><span class="brand-mark"><svg viewBox="0 0 28 28"><path d="m14 3 10 6v11l-10 6-10-6V9Zm0 0v12m10-6-10 6L4 9m10 6v11"/></svg></span><span>공간 스튜디오<small>SPACE STUDIO</small></span></a>
+  <div class="project-heading"><span class="project-kicker">김천시 · 정보화교육장 이전</span><div><h1 id="projectTitle">새 정보화교육장</h1><span class="project-badge">배치 계획</span></div></div>
+  <div class="header-actions"><span id="saveStatus" class="saved"><i></i>자동 저장됨</span><button class="button quiet" id="photosBtn" data-icon="image">참고 사진 <span class="count-badge">14</span></button><button class="button quiet" id="saveBtn" data-icon="save">저장 / 불러오기</button><button class="button primary" id="exportBtn" data-icon="download">도면 내보내기</button></div>
+ </header>
+ <div class="workspace">
+  <aside class="rail" aria-label="작업 도구"><button class="rail-button active" id="selectTool" data-tip="선택 · V" aria-label="선택 도구"><span data-icon="pointer"></span><small>선택</small></button><button class="rail-button" id="panTool" data-tip="화면 이동 · H" aria-label="화면 이동"><span data-icon="hand"></span><small>이동</small></button><div class="rail-divider"></div><button class="rail-button" id="measureTool" data-tip="거리 측정 · M" aria-label="거리 측정"><span data-icon="ruler"></span><small>측정</small></button><button class="rail-button" id="structureBtn" data-tip="문·창문·단자함 수정" aria-label="공간 설정"><span data-icon="wall"></span><small>공간</small></button><div class="rail-spacer"></div><button class="rail-button" id="helpBtn" aria-label="사용 안내"><span data-icon="help"></span><small>도움말</small></button></aside>
+  <main class="stage" id="stage">
+   <div class="stage-top"><div class="view-switch" role="group" aria-label="보기 방식"><button id="view3d" class="active" data-icon="cube">3D 공간</button><button id="view2d" data-icon="plan">2D 평면</button></div><div class="stage-options"><button id="gridBtn" class="chip active" data-icon="grid">45cm 타일</button><button id="clearanceBtn" class="chip" data-icon="ruler" aria-pressed="false" title="벽·가구 사이 간격 표시">간격 표시</button><button id="smartBtn" class="chip active" data-icon="magnet">스마트 정렬</button><button id="wallBtn" class="chip" data-icon="wall">전체 벽</button><button id="labelBtn" class="chip active" data-icon="tag">이름표</button></div></div>
+   <div class="project-context"><span class="eyebrow">YOUR NEW CLASSROOM</span><h2>배치할수록, 선명해지는 공간.</h2><p>가구를 끌어 놓고 새로운 교육장을 그려보세요.</p></div>
+   <div id="viewport" aria-label="가구를 배치하는 3D 교육장" tabindex="0"></div>
+   <svg id="overlay" aria-hidden="true"></svg><div id="labels"></div><div id="selectionBox"></div>
+   <div id="loading"><span class="loader"></span><strong>교육장 공간을 준비하고 있어요</strong><p>실측 가구와 45cm 타일을 불러오는 중</p></div>
+   <div id="fatal" hidden></div>
+   <div class="room-facts"><span class="fact-icon" data-icon="plan"></span><div><strong id="roomFact">9.00 × 12.00 m</strong><span id="areaFact">108㎡ · 바닥 45 × 45cm</span></div><span class="fact-divider"></span><div><strong id="placedFact">0개 배치</strong><span id="desksFact">컴퓨터책상 0 / 18</span></div><button id="roomEditBtn" aria-label="방 치수 수정" data-icon="settings"></button></div>
+   <div class="camera-tools"><button id="zoomIn" aria-label="확대" data-icon="plus"></button><span id="zoomValue">100%</span><button id="zoomOut" aria-label="축소" data-icon="minus"></button><span class="vertical-divider"></span><button id="fitBtn" aria-label="공간 전체 보기" data-icon="fit"></button><button id="turnViewBtn" aria-label="반대편에서 보기" data-icon="rotateview"></button></div>
+   <div id="floatingSelection" class="floating-selection" hidden><span id="selectedTitle"></span><button id="rotateSelection" data-icon="rotate" title="90° 회전 · R" aria-label="선택 가구 회전"></button><button id="duplicateSelection" data-icon="copy" title="복제 · Ctrl+D" aria-label="선택 가구 복제"></button><button id="deleteSelection" data-icon="trash" title="삭제 · Delete" aria-label="선택 가구 삭제"></button></div>
+   <div id="clearanceToolbar" class="clearance-toolbar" hidden><span><i></i>벽까지 <i></i>가구 사이</span><select id="clearanceScope" aria-label="간격 표시 범위"><option value="auto">선택 가구 · 없으면 전체</option><option value="all">전체 간격</option></select><small>가장자리 기준 · cm</small></div><div id="measurementHint" class="mode-hint" hidden>시작점과 끝점을 클릭하세요 · Esc로 종료</div>
+   <div class="stage-bottom"><div class="history-tools"><button id="undoBtn" aria-label="실행 취소" data-icon="undo" disabled></button><button id="redoBtn" aria-label="다시 실행" data-icon="redo" disabled></button><span></span><button id="clearBtn" data-icon="trash">비우기</button></div><p id="interactionHint"><span class="mouse-mark"></span> 가구 드래그로 배치 <i>·</i> 빈 공간 드래그로 회전 <i>·</i> 휠로 확대</p></div>
+  </main>
+  <aside class="sidebar" id="sidebar">
+   <div class="sidebar-top"><div><span class="eyebrow">FURNITURE LIBRARY</span><h2>가구 & 용품 <span id="catalogTotal">12</span></h2></div><button id="addObjectBtn" class="add-object-button" data-icon="plus">물건 추가</button><button id="dockBtn" class="icon-button" data-icon="dock" aria-label="가구 패널을 아래로 옮기기" title="아래쪽 2행으로 보기"></button></div>
+   <div class="side-tabs"><button class="active" data-side-tab="catalog">가구 목록</button><button data-side-tab="items">배치 목록 <span id="itemTabCount">0</span></button></div>
+   <div id="catalogPane" class="sidebar-pane"><div class="search"><span data-icon="search"></span><input id="catalogSearch" placeholder="가구 또는 용품 검색" aria-label="가구 검색"><kbd>/</kbd></div><div class="categories"><button class="active" data-category="all">전체</button><button data-category="desk">책상·의자</button><button data-category="partition">파티션</button><button data-category="equipment">수납·장비</button></div><label class="inventory-limit"><input id="limitInventory" type="checkbox">기준 수량으로 제한</label><p class="catalog-hint"><span data-icon="pointer"></span> 끌어서 놓거나, 클릭해서 추가하세요</p><div id="catalog" class="catalog"></div><div class="inventory-note"><span data-icon="info"></span><p>가구 치수는 첨부 파일명 기준입니다.<br><b>의자·PC는 시각화용 추정 치수</b>이며 수량 제한이 없습니다.</p></div></div>
+   <div id="itemsPane" class="sidebar-pane" hidden><div class="list-actions"><button class="button small" id="selectAllBtn" data-icon="selectall">모두 선택</button><button class="button small" id="deselectBtn">선택 해제</button></div><div id="itemList"></div><div class="empty-list" id="emptyList"><span data-icon="cube"></span><h3>새 공간을 채워보세요</h3><p>가구 목록에서 원하는 가구를<br>드래그하면 배치가 시작됩니다.</p></div></div>
+   <div class="selection-panel" id="propertyPanel" hidden></div>
+   <div class="sidebar-footer"><div class="example-icon" data-icon="sparkles"></div><div><strong>배치, 처음이라면?</strong><p>18개 책상으로 시작해 보세요.</p></div><button id="exampleBtn" class="text-button">추천 배치 <span>↗</span></button></div>
+  </aside>
+ </div>
+ <footer class="statusbar"><span><i class="live-dot"></i>실측 기반 3D 배치 <span class="status-separator">/</span><span id="modeStatus">자유 배치</span></span><span id="statusMessage">문·창문·설비 위치는 사진 추정 · 공간 설정에서 수정 가능</span><div><label>이동 단위 <select id="snapSelect" aria-label="이동 단위"><option value="0">자유</option><option value="0.01">1cm</option><option value="0.05" selected>5cm</option><option value="0.45">45cm 타일</option></select></label><span class="status-separator">|</span><span class="shortcut">Shift 다중 선택</span><span class="shortcut">R 회전</span></div></footer>
+</div>
+<div id="dragBadge" hidden></div><div id="toast" role="status"></div>
+<dialog id="dialog"><div class="dialog-head"><div><span class="eyebrow" id="dialogEyebrow"></span><h2 id="dialogTitle"></h2></div><button class="icon-button" id="closeDialog" data-icon="close" aria-label="닫기"></button></div><div id="dialogBody"></div></dialog>
+<input id="fileInput" type="file" accept=".json,application/json" hidden>
+<script type="module" src="./app.js"></script>
+</body></html>

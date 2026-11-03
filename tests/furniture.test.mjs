@@ -1,0 +1,7 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {CATALOG,monitorSlots,monitorsFor,validateMonitors} from '../dist/furniture.mjs';
+test('removing either PC set keeps the other in its original slot',()=>{const slots=monitorSlots('computerDesk');assert.deepEqual(slots.map(s=>s.x),[-.36,.36]);for(const active of [[false,true],[true,false]]){const item={type:'computerDesk',monitors:active};const visible=slots.filter((_,i)=>monitorsFor(item)[i]);assert.equal(visible.length,1);assert.equal(visible[0].x,active[0]?-.36:.36);}});
+test('old saved desks keep both PC sets and mini desks keep one center set',()=>{assert.deepEqual(monitorsFor({type:'computerDesk'}),[true,true]);assert.deepEqual(monitorsFor({type:'miniDesk'}),[true]);assert.deepEqual(monitorSlots('miniDesk').map(s=>s.x),[0]);});
+test('monitor settings survive JSON save and reload with both disabled supported',()=>{for(const values of [[true,false],[false,true],[false,false]]){const raw=JSON.parse(JSON.stringify({type:'computerDesk',monitors:values}));assert.deepEqual(validateMonitors(raw.type,raw.monitors),values);}assert.throws(()=>validateMonitors('computerDesk',[false]));assert.throws(()=>validateMonitors('computerDesk',['false',true]));});
+test('rack and fridge are real catalog items with editable estimated dimensions',()=>{for(const type of ['miniRack','miniFridge']){const item=CATALOG.find(c=>c.type===type);assert.equal(item.count,1);assert.equal(item.dims.length,3);assert(item.dims.every(x=>x>0));assert(item.note.includes('추정'));}});
