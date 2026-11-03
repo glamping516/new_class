@@ -39,6 +39,20 @@ export function buildExtraModel(spec,dims,kit){
   const t=.025;box(g,w,.035,d,0,h-.0175,0,timber);box(g,t,h-.055,d,-w/2+t/2,(h-.055)/2,0,surface);box(g,t,h-.055,d,w/2-t/2,(h-.055)/2,0,surface);box(g,w-.03,.035,d,0,.045,0,surface);box(g,w,h-.04,.02,0,(h-.04)/2,-d/2+.01,surface);
   if(spec.style==='open'||spec.style==='printer'){const shelves=spec.style==='open'?3:1;for(let n=1;n<=shelves;n++)box(g,w-.04,.025,d-.025,0,n*(h-.06)/(shelves+1),.005,surface);if(spec.style==='open')for(const [k,width]of[.055,.045,.06,.04,.05].entries()){const x=-w*.31+k*.068;box(g,width,.20,d*.55,x,h*.34+.12,0,material(['#9eafa1','#bbc9cb','#cebd9d','#d0cdc0','#a4b3ba'][k]));}}
   else{for(const x of [-w*.25,w*.25]){box(g,w/2-.016,h-.095,.021,x,h/2,d/2-.01,surface);box(g,.012,.10,.013,x<0?-.035:.035,h*.58,d/2+.008,frame);}}
+ }else if(spec.model==='printer'){
+  const trim=material('#3c474a'),paper=material('#fafbf6'),display=material('#86afa8',{roughness:.3});
+  for(const x of [-w*.36,w*.36])for(const z of [-d*.32,d*.32])box(g,w*.10,h*.06,d*.11,x,h*.03,z,trim);
+  roundBox(w,h*.71,d*.90,0,h*.415,-d*.035,surface,Math.min(w,d)*.055);
+  roundBox(w*.97,h*.07,d*.86,0,h*.80,-d*.045,trim,.016);
+  roundBox(w*.97,h*.12,d*.85,0,h*.895,-d*.045,surface,.016);
+  box(g,w*.72,h*.012,d*.57,-w*.045,h*.962,-d*.085,paper);
+  box(g,w*.77,h*.09,d*.035,0,h*.54,d*.43,trim);
+  roundBox(w*.79,h*.035,d*.33,0,h*.30,d*.335,trim,.012);
+  box(g,w*.58,h*.018,d*.30,-w*.045,h*.328,d*.335,paper);
+  box(g,w*.75,h*.018,d*.014,0,h*.14,d*.421,trim);
+  box(g,w*.19,h*.035,d*.16,w*.30,h*.85,d*.29,trim);
+  box(g,w*.12,h*.008,d*.09,w*.30,h*.873,d*.29,display);
+  for(let k=0;k<2;k++)cylinder(g,w*.018,w*.018,h*.012,w*(.14+k*.065),h*.87,d*.29,k?mats.dark:display,10);
  }else if(spec.model==='water'){
   roundBox(w,h,d,0,h/2,0,surface,.025);box(g,w*.72,h*.33,.013,0,h*.62,d/2+.003,mats.dark);for(const x of [-w*.15,w*.15]){box(g,.025,.035,.035,x,h*.68,d/2+.01,material(x<0?'#b78078':'#7b9da8'));}box(g,w*.65,.025,d*.22,0,h*.38,d*.36,mats.metal);box(g,w*.70,.025,d*.71,0,h-.0125,0,mats.panel);
  }else if(spec.model==='coat'){

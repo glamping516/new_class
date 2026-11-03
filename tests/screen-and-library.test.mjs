@@ -6,6 +6,7 @@ import {SoftwareRenderer} from '../dist/software-renderer.js';
 import {buildExtraModel} from '../dist/extra-models.js';
 import {buildScreenModel,applyScreenProgress,screenVisibleHeight,screenTween,screenVerticalRange,readScreenRaised} from '../dist/screen-model.mjs';
 import {mountBoardBehindScreen} from '../dist/wall-placement.mjs';
+import {placePrinterOnDesk} from '../dist/tabletop-placement.mjs';
 import {bounds} from '../dist/geometry.mjs';
 const material=color=>new THREE.MeshStandardMaterial({color});
 const mats=Object.fromEntries(['white','dark','screen','woodSide','frame','metal','panel'].map(k=>[k,material('#aabbcc')]));
@@ -15,7 +16,7 @@ const kit={material,mats,box,cylinder};
 const close=(a,b)=>assert(Math.abs(a-b)<1e-6,`${a} != ${b}`);
 
 test('expanded library has unique items, product board dimensions and non-PC counseling furniture',()=>{
- assert.equal(CATALOG.length,49);assert.equal(new Set(CATALOG.map(c=>c.type)).size,CATALOG.length);
+ assert.equal(CATALOG.length,50);assert.equal(new Set(CATALOG.map(c=>c.type)).size,CATALOG.length);
  for(const c of CATALOG)assert(c.dims.length===3&&c.dims.every(v=>Number.isFinite(v)&&v>0));
  assert.deepEqual(CATALOG.filter(c=>isWallBoard(c.type)).map(c=>c.boardFace),[[.9,.6],[1.2,.9],[1.5,.9],[1.8,.9],[1.8,1.2],[2.4,1.2]]);
  for(const c of CATALOG.filter(c=>c.category==='whiteboard'))assert(c.sourceUrl.startsWith('https://'));
@@ -81,4 +82,16 @@ test('CPU fallback hides the complete board behind a lowered screen and reveals 
   paints.length=0;renderer.render(scene,camera);assert.deepEqual(probes.map(colorAt),before,'opaque screen covers board face and edge');
   applyScreenProgress(screen,1);paints.length=0;renderer.render(scene,camera);assert(probes.some((p,n)=>colorAt(p)!==before[n]),'raised screen exposes the board');
  }finally{globalThis.document=oldDocument;}
+});
+
+
+test('desktop printer fits rotated tabletops at their actual height and refuses unsuitable surfaces',()=>{
+ const room={w:9,d:12,h:2.7},desk={id:'desk-1',type:'computerDesk',x:4,z:4,y:.1,rot:90},printer={id:'printer',type:'desktopPrinter',x:4.25,z:3.4,y:0,rot:0};
+ const mounted=placePrinterOnDesk(printer,[desk],room,CATALOG),p=bounds(mounted,CATALOG),d=bounds(desk,CATALOG);
+ close(mounted.y,.82);assert.equal(mounted.rot,90);assert(p.minX>=d.minX&&p.maxX<=d.maxX&&p.minZ>=d.minZ&&p.maxZ<=d.maxZ);assert.equal(printer.y,0);
+ const farDesk={id:'desk-2',type:'desk',x:8,z:10,y:0,rot:0};const selected=placePrinterOnDesk(printer,[desk,farDesk],room,CATALOG,{nearest:true,preferredId:farDesk.id});close(selected.x,8);close(selected.z,10);close(selected.y,.7);
+ assert.equal(placePrinterOnDesk({...printer,x:1,z:1},[desk],room,CATALOG),null);
+ assert.equal(placePrinterOnDesk(printer,[{...desk,dims:[.3,.3,.72]}],room,CATALOG,{nearest:true}),null);
+ assert.equal(placePrinterOnDesk(printer,[desk],{...room,h:.9},CATALOG,{nearest:true}),null);
+ assert.equal(placePrinterOnDesk(printer,[{...desk,type:'sofaCompact'}],room,CATALOG,{nearest:true}),null);
 });

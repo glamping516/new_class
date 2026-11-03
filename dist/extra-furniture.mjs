@@ -28,6 +28,7 @@ export const EXTRA_CATALOG=[
  planned('pantryCounter','탕비 수납대 · 120',[1.2,.45,.85],'equipment','storage',{style:'counter',color:'#e7e9e2'}),
  planned('bookcaseLow','오픈 책장 · 80',[.8,.3,1.2],'equipment','storage',{style:'open',color:'#d3c0a0'}),
  planned('printerStand','프린터 받침대',[.6,.45,.7],'equipment','storage',{style:'printer',color:'#d3c0a0'}),
+ planned('desktopPrinter','탁상용 프린터 · A4',[.42,.36,.25],'equipment','printer',{color:'#e7e9e4',defaultElevation:.72,note:'책상 위 배치 · 추정 치수'}),
  planned('waterDispenser','스탠드 정수기',[.32,.35,1.02],'equipment','water',{color:'#e5e9e5'}),
  planned('coatStand','스탠드 옷걸이',[.45,.45,1.7],'equipment','coat',{color:'#82938a'}),
  planned('mobilePrivacy','상담 공간 파티션 · 90',[.9,.35,1.5],'partition','privacy',{color:'#a8b5aa'}),
