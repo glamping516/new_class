@@ -25,3 +25,10 @@
 .product-source{display:block;font-size:9px;color:#55856c;text-decoration:none;margin-top:13px;line-height:1.7}.product-source small{display:block;font-size:8px;color:#98a59c}.product-source:hover{text-decoration:underline}
 .bottom-dock .categories{gap:5px}.bottom-dock .categories button{font-size:9px;padding:5px 7px}
 @media(max-width:1000px){#screenToggleBtn{font-size:9px}.stage-options{max-width:100%}}
+
+/* Row clearances remain legible when marking desk positions on site. */
+.clearance-toolbar{max-width:318px;gap:8px}.clearance-toolbar .row-dot{background:#9471b8;margin-left:5px}.clearance-toolbar select{max-width:100%;font-size:10px}
+.desk-row-panel{width:100%;border-top:1px solid #e8e3ed;padding-top:9px;color:#75608c}.desk-row-panel summary{cursor:pointer;font-size:11px;font-weight:650;display:list-item;list-style-position:inside}.desk-row-panel summary b{float:right;font-size:10px;background:#f1ecf7;padding:2px 6px;border-radius:4px;font-weight:600}
+#deskRowTable>p{font-size:9px;color:#95a098;line-height:1.7;margin:8px 0}.desk-row-scroll{max-height:195px;overflow:auto}.desk-row-panel table{width:100%;border-collapse:collapse;font-size:10px;font-variant-numeric:tabular-nums}.desk-row-panel th,.desk-row-panel td{padding:8px 4px;border-bottom:1px solid #eeeaf2;text-align:right;white-space:nowrap}.desk-row-panel thead th{position:sticky;top:0;background:#fbfafc;color:#9a91a6;font-size:8px;font-weight:500}.desk-row-panel th:first-child{text-align:left}.desk-row-panel tbody th{font-weight:600}.desk-row-panel small{font-size:8px;color:#a49aaf;font-weight:400}.desk-row-panel td{color:#77618f}.desk-row-panel td:last-child{font-weight:650}.desk-row-panel .row-overlap{color:#b2704e}
+.row-clearance{stroke:#9872b9;stroke-width:1.65;fill:none}.row-extension{stroke:#aa94c0;stroke-width:.7;stroke-dasharray:3 3;opacity:.65;fill:none}.row-label{fill:#805ba3;font-size:11px;font-weight:700}.desk-row-tag{fill:#927aa8;font-size:9px;font-weight:600;stroke:#fffffff2!important;stroke-width:5px!important}
+@media(max-height:750px){.desk-row-scroll{max-height:140px}.desk-row-panel th,.desk-row-panel td{padding-top:6px;padding-bottom:6px}}
