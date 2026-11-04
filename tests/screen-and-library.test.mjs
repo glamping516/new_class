@@ -28,6 +28,21 @@ test('CPU export hides selection lines when any parent group is hidden',()=>{
  }finally{globalThis.document=previous;}
 });
 
+test('CPU side-wall cladding paints over the base wall despite differing panel center heights',()=>{
+ const previous=globalThis.document,colors=[];
+ const ctx={setTransform(){},fillRect(){},beginPath(){},moveTo(){},lineTo(){},closePath(){},stroke(){},fill(){colors.push(this.fillStyle);}};
+ globalThis.document={createElement:()=>({getContext:()=>ctx})};
+ try{
+  const renderer=new SoftwareRenderer(),scene=new THREE.Scene();
+  const wall=new THREE.Mesh(new THREE.BoxGeometry(.14,2.7,12),material('#ff0000'));wall.position.set(-.075,1.35,6);wall.userData.wallPanel=true;wall.userData.panelNormal=[1,0,0];scene.add(wall);
+  const cladding=new THREE.Group();cladding.userData.wallPanel=true;cladding.position.set(.005,0,6);cladding.rotation.y=Math.PI/2;
+  for(const [x,y,w,h] of [[-4.5,1.35,3,2.7],[0,.3,6,.6],[0,2.1,6,1.2],[4.5,1.35,3,2.7]])box(cladding,w,h,.006,x,y,0,material('#0000ff'));
+  scene.add(cladding);const fixture=new THREE.Group();fixture.position.set(.04,.6,5);fixture.rotation.y=Math.PI/2;fixture.userData.wallPanel=true;box(fixture,.6,.9,.05,0,.45,.025,material('#00ff00'));scene.add(fixture);const camera=new THREE.PerspectiveCamera();camera.position.set(16.5,15,22);camera.lookAt(4.5,0,6);renderer.render(scene,camera);
+  const red=colors.map((c,n)=>/^#[a-f0-9]{2}0000$/i.test(c)?n:-1).filter(n=>n>=0),blue=colors.map((c,n)=>/^#0000[a-f0-9]{2}$/i.test(c)?n:-1).filter(n=>n>=0);
+  const green=colors.map((c,n)=>/^#00[a-f0-9]{2}00$/i.test(c)?n:-1).filter(n=>n>=0);assert.ok(red.length&&blue.length&&green.length);assert.ok(Math.max(...red)<Math.min(...blue));assert.ok(Math.max(...blue)<Math.min(...green));
+ }finally{globalThis.document=previous;}
+});
+
 test('expanded library has unique items, product board dimensions and non-PC counseling furniture',()=>{
  assert.equal(CATALOG.length,58);assert.equal(new Set(CATALOG.map(c=>c.type)).size,CATALOG.length);
  for(const c of CATALOG)assert(c.dims.length===3&&c.dims.every(v=>Number.isFinite(v)&&v>0));
