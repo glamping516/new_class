@@ -22,3 +22,12 @@ export function monitorsFor(item){return monitorSlots(item.type).map((_,n)=>item
 export function validateMonitors(type,value){const slots=monitorSlots(type);if(value===undefined)return slots.map(()=>true);if(!Array.isArray(value)||value.length!==slots.length||value.some(v=>typeof v!=='boolean'))throw new Error('책상별 모니터 설정이 올바르지 않습니다.');return [...value];}
 
 export const isWallBoard=type=>CATALOG.find(c=>c.type===type)?.wallMounted===true;
+
+// Full-height walls follow the room, including imported layouts and later edits.
+export function syncFullHeightWall(item,room){
+ if(item.type==='fullHeightWall'){
+  const dims=item.dims||CATALOG.find(c=>c.type===item.type).dims;
+  item.dims=[dims[0],dims[1],room.h];item.y=0;
+ }
+ return item;
+}

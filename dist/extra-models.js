@@ -59,6 +59,10 @@ export function buildExtraModel(spec,dims,kit){
   cylinder(g,.018,.024,h*.96,0,h*.48,0,frame,12);for(let k=0;k<4;k++){const a=k*Math.PI/2;const base=box(g,w*.85,.026,.03,0,.013,0,frame);base.rotation.y=a;const branch=box(g,w*.43,.018,.02,Math.cos(a)*w*.20,h*(.78+k*.045),Math.sin(a)*d*.20,frame);branch.rotation.y=-a;cylinder(g,.009,.009,.06,Math.cos(a)*w*.40,h*(.78+k*.045)+.025,Math.sin(a)*d*.40,frame,8);}
  }else if(spec.model==='privacy'){
   roundBox(w,h-.07,.038,0,h/2+.025,0,surface,.018);for(const x of [-w*.4,w*.4]){box(g,.07,.03,d,x,.04,0,frame);for(const z of [-d*.36,d*.36])cylinder(g,.025,.025,.025,x,.0125,z,mats.dark,10);}
+ }else if(spec.model==='fullHeightWall'){
+  box(g,w,h,d,0,h/2,0,surface);
+  box(g,w,.07,d+.002,0,.035,0,material('#bdc6bc'));
+  for(const x of [-w/2+.008,w/2-.008])box(g,.016,h,d+.002,x,h/2,0,material('#d2d9ce'));
  }else if(spec.model==='whiteboard'||spec.model==='mobileBoard'){
   g.userData.wallPanel=true;
   const mobile=spec.model==='mobileBoard',bw=mobile?w*spec.boardFace[0]/spec.dims[0]:w,bh=mobile?h*spec.boardFace[1]/spec.dims[2]:h,base=mobile?h*.4:0,boardD=mobile?.035:d;

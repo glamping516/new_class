@@ -32,6 +32,7 @@ export const EXTRA_CATALOG=[
  planned('waterDispenser','스탠드 정수기',[.32,.35,1.02],'equipment','water',{color:'#e5e9e5'}),
  planned('coatStand','스탠드 옷걸이',[.45,.45,1.7],'equipment','coat',{color:'#82938a'}),
  planned('mobilePrivacy','상담 공간 파티션 · 90',[.9,.35,1.5],'partition','privacy',{color:'#a8b5aa'}),
+ planned('fullHeightWall','천장 높이 가벽',[1.2,.1,2.7],'partition','fullHeightWall',{color:'#e5e8df',note:'천장 높이 자동 · 폭·두께 수정'}),
  ...[[90,60],[120,90],[150,90],[180,90],[180,120],[240,120]].map(([w,h])=>planned(
   `whiteboardWall${w}x${h}`,`벽걸이 보드 · ${w}×${h}`,[w/100,.035,h/100],'whiteboard','whiteboard',
   {wallMounted:true,defaultElevation:h===120?.95:1.1,note:'제품 표기 규격 · 두께 추정',sourceUrl:boardSource,sourceName:'두문 · 드림오피스 판매 규격',boardFace:[w/100,h/100]}

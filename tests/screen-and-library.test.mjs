@@ -16,7 +16,7 @@ const kit={material,mats,box,cylinder};
 const close=(a,b)=>assert(Math.abs(a-b)<1e-6,`${a} != ${b}`);
 
 test('expanded library has unique items, product board dimensions and non-PC counseling furniture',()=>{
- assert.equal(CATALOG.length,50);assert.equal(new Set(CATALOG.map(c=>c.type)).size,CATALOG.length);
+ assert.equal(CATALOG.length,51);assert.equal(new Set(CATALOG.map(c=>c.type)).size,CATALOG.length);
  for(const c of CATALOG)assert(c.dims.length===3&&c.dims.every(v=>Number.isFinite(v)&&v>0));
  assert.deepEqual(CATALOG.filter(c=>isWallBoard(c.type)).map(c=>c.boardFace),[[.9,.6],[1.2,.9],[1.5,.9],[1.8,.9],[1.8,1.2],[2.4,1.2]]);
  for(const c of CATALOG.filter(c=>c.category==='whiteboard'))assert(c.sourceUrl.startsWith('https://'));
