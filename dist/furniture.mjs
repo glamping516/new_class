@@ -1,4 +1,5 @@
 import {EXTRA_CATALOG} from './extra-furniture.mjs';
+import {WALL_COVERS} from './wall-covers.mjs';
 export const CATALOG=[
  {type:'computerDesk',name:'컴퓨터책상',dims:[1.5,.6,.72],count:18,category:'desk',photo:9,note:'실측 · 18개'},
  {type:'desk',name:'일반책상',dims:[1.4,.8,.7],count:2,category:'desk',photo:7,note:'실측 · 2개'},
@@ -12,7 +13,8 @@ export const CATALOG=[
  {type:'chair',name:'사무용 의자',dims:[.56,.58,.94],count:Infinity,category:'seating',photo:12,note:'추정 치수'},
  {type:'computer',name:'PC·모니터 세트',dims:[.82,.42,.5],count:Infinity,category:'equipment',photo:12,note:'시각화용 · 추정'},
  {type:'customObject',name:'새 물건 만들기',dims:[.6,.6,.8],count:Infinity,category:'equipment',photo:null,note:'이름·치수 직접 입력'},
- ...EXTRA_CATALOG
+ ...EXTRA_CATALOG,
+ ...WALL_COVERS
 ];
 export const isDesk=type=>['computerDesk','desk','miniDesk'].includes(type);
 // Slots are fixed: hiding one monitor never moves the remaining monitor.

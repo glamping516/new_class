@@ -1,8 +1,10 @@
 import * as THREE from './vendor/three.module.min.js';
+import {buildWallCoverModel} from './wall-cover-models.js';
 
 // These furniture models use their actual footprint and total height for drag,
 // snapping and clearance checks. Colors and designs are planning illustrations.
-export function buildExtraModel(spec,dims,kit){
+export function buildExtraModel(spec,dims,kit,options={}){
+ if(spec.wallCover)return buildWallCoverModel(spec,dims,kit,options);
  const {box,cylinder,material,mats}=kit,[w,d,h]=dims,g=new THREE.Group();
  const surface=material(spec.color||'#d8ded3',{roughness:spec.model==='sofa'?.96:.7}),timber=mats.woodSide,frame=material('#5f6d65',{metalness:.25,roughness:.5});
  const roundBox=(width,height,depth,x,y,z,mat,radius=.025)=>{

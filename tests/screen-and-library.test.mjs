@@ -15,8 +15,21 @@ const cylinder=(g,rt,rb,h,x,y,z,m,segments=12)=>{const mesh=new THREE.Mesh(new T
 const kit={material,mats,box,cylinder};
 const close=(a,b)=>assert(Math.abs(a-b)<1e-6,`${a} != ${b}`);
 
+test('CPU export hides selection lines when any parent group is hidden',()=>{
+ const previous=globalThis.document;let strokes=0;
+ const ctx={setTransform(){},fillRect(){},beginPath(){},moveTo(){},lineTo(){},stroke(){strokes++;}};
+ globalThis.document={createElement:()=>({getContext:()=>ctx})};
+ try{
+  const renderer=new SoftwareRenderer(),scene=new THREE.Scene(),parent=new THREE.Group(),nested=new THREE.Group();
+  const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-1,0,-2),new THREE.Vector3(1,0,-2)]),new THREE.LineBasicMaterial({color:'#339966'}));
+  nested.add(line);parent.add(nested);scene.add(parent);parent.visible=false;
+  const camera=new THREE.PerspectiveCamera();renderer.render(scene,camera);assert.equal(strokes,0);
+  parent.visible=true;renderer.render(scene,camera);assert.equal(strokes,1);
+ }finally{globalThis.document=previous;}
+});
+
 test('expanded library has unique items, product board dimensions and non-PC counseling furniture',()=>{
- assert.equal(CATALOG.length,51);assert.equal(new Set(CATALOG.map(c=>c.type)).size,CATALOG.length);
+ assert.equal(CATALOG.length,58);assert.equal(new Set(CATALOG.map(c=>c.type)).size,CATALOG.length);
  for(const c of CATALOG)assert(c.dims.length===3&&c.dims.every(v=>Number.isFinite(v)&&v>0));
  assert.deepEqual(CATALOG.filter(c=>isWallBoard(c.type)).map(c=>c.boardFace),[[.9,.6],[1.2,.9],[1.5,.9],[1.8,.9],[1.8,1.2],[2.4,1.2]]);
  for(const c of CATALOG.filter(c=>c.category==='whiteboard'))assert(c.sourceUrl.startsWith('https://'));
