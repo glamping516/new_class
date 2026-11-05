@@ -150,3 +150,5 @@
 
 .construction-export-status{position:absolute;right:28px;top:67px;font-size:9px;color:#83c5d9;pointer-events:none}
 @media(max-width:850px){.construction-export-status{top:58px;right:20px;font-size:8px}}
+
+.construction-marker{z-index:2}.construction-wall-label{z-index:1}
