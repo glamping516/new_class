@@ -2,7 +2,7 @@ import * as THREE from './vendor/three.module.min.js';
 import {OrbitControls} from './vendor/OrbitControls.js';
 import {SoftwareRenderer} from './software-renderer.js';
 import {buildConstructionScene} from './construction-scene.js';
-import {floorboxRecords,constructionNote,layerSettings} from './construction-data.mjs';
+import {floorboxRecords,constructionNote,layerSettings,dimensionLabel} from './construction-data.mjs';
 import {pdfFromJpeg} from './pdf-export.mjs';
 import {projectFileStem} from './project-info.mjs';
 
@@ -51,7 +51,7 @@ export function openConstructionView(current,sourceRoom,sourceItems,{toast=()=>{
  function choose(id){selectedId=id;refresh();}
  function dimensions(){
   const f=records.find(f=>f.id===selectedId);if(!f||!$('constructionDimensions').checked)return[];
-  return[{a:p2(0,f.z),b:p2(f.x,f.z),text:'X · '+f.left+'cm'},{a:p2(f.x,0),b:p2(f.x,f.z),text:'Z · '+f.front+'cm'}].map(m=>{const dx=m.b.x-m.a.x,dy=m.b.y-m.a.y,len=Math.hypot(dx,dy)||1,sign=dx>0?-1:1,offset=len<80?32:15;return{...m,label:{x:(m.a.x+m.b.x)/2+(-dy/len)*sign*offset,y:(m.a.y+m.b.y)/2+(dx/len)*sign*offset}};});
+  return[{a:p2(0,f.z),b:p2(f.x,f.z),text:'X · '+f.left+'cm'},{a:p2(f.x,0),b:p2(f.x,f.z),text:'Z · '+f.front+'cm'}].map(m=>({...m,label:dimensionLabel(m.a,m.b,m.text,records.map(b=>point(b.x,.35,b.z)))}));
  }
  function overlay(){
   let svg='';for(const {a,b,text,label}of dimensions()){

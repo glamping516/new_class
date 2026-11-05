@@ -18,3 +18,17 @@ export function constructionNote(state){
 export function layerSettings({lift=3.4,opacity=.22,floorOnly=false}={}){
  return{lift:Math.min(6,Math.max(2,Number(lift)||3.4)),opacity:Math.min(.45,Math.max(.05,Number(opacity)||.22)),floorOnly:!!floorOnly};
 }
+
+// Keep dimension text clear of every terminal code, including another terminal
+// halfway along a long X/Z line. The same position is used on screen and export.
+export function dimensionLabel(a,b,text,markers=[]){
+ const dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy)||1,sign=dx>0?-1:1;
+ const nx=-dy/len*sign,ny=dx/len*sign,width=text.length*7+12;
+ let fallback;
+ for(const along of [0,-36,36,-64,64])for(const offset of [len<80?32:15,48,64,80]){
+  const x=(a.x+b.x)/2+nx*offset+dx/len*along,y=(a.y+b.y)/2+ny*offset+dy/len*along;
+  const box={x:x-width/2,y:y-15,w:width,h:18};fallback={x,y,box};
+  if(!markers.some(p=>box.x<p.x+24&&box.x+box.w>p.x-24&&box.y<p.y+2&&box.y+box.h>p.y-28))return fallback;
+ }
+ return fallback;
+}

@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from '../dist/vendor/three.module.min.js';
-import {floorboxRecords,constructionNote,layerSettings} from '../dist/construction-data.mjs';
+import {floorboxRecords,constructionNote,layerSettings,dimensionLabel} from '../dist/construction-data.mjs';
 import {buildConstructionScene} from '../dist/construction-scene.js';
 import {SoftwareRenderer} from '../dist/software-renderer.js';
 const state={room:{w:9,d:12,h:2.7},items:[],fixtures:[
@@ -43,6 +43,15 @@ test('presentation lift and opacity remain within usable bounds',()=>{
  assert.deepEqual(layerSettings(),{lift:3.4,opacity:.22,floorOnly:false});
  assert.deepEqual(layerSettings({lift:100,opacity:4,floorOnly:true}),{lift:6,opacity:.45,floorOnly:true});
  assert.deepEqual(layerSettings({lift:-1,opacity:-1}),{lift:2,opacity:.05,floorOnly:false});
+});
+
+test('long wall dimensions avoid terminal codes at their midpoint in plan and perspective',()=>{
+ const markers=[{x:300,y:200},{x:500,y:200},{x:500,y:400},{x:400,y:400}];
+ for(const [a,b,text]of [[{x:500,y:0},{x:500,y:400},'Z · 840cm'],[{x:200,y:400},{x:500,y:400},'X · 541cm'],[{x:260,y:180},{x:340,y:220},'X · 85cm']]){
+  const label=dimensionLabel(a,b,text,markers),r=label.box;
+  assert.ok(Number.isFinite(label.x)&&Number.isFinite(label.y));
+  assert.ok(markers.every(p=>!(r.x<p.x+24&&r.x+r.w>p.x-24&&r.y<p.y+2&&r.y+r.h>p.y-28)));
+ }
 });
 
 test('CPU hologram uses scene background, independent line segments and material opacity',()=>{
