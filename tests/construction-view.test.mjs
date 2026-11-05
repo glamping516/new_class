@@ -51,6 +51,8 @@ test('long wall dimensions avoid terminal codes at their midpoint in plan and pe
   const label=dimensionLabel(a,b,text,markers),r=label.box;
   assert.ok(Number.isFinite(label.x)&&Number.isFinite(label.y));
   assert.ok(markers.every(p=>!(r.x<p.x+24&&r.x+r.w>p.x-24&&r.y<p.y+2&&r.y+r.h>p.y-28)));
+  const second=dimensionLabel(a,b,text,markers,[r]).box;
+  assert.ok(!(second.x<r.x+r.w+5&&second.x+second.w>r.x-5&&second.y<r.y+r.h+5&&second.y+second.h>r.y-5));
  }
 });
 

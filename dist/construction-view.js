@@ -51,7 +51,7 @@ export function openConstructionView(current,sourceRoom,sourceItems,{toast=()=>{
  function choose(id){selectedId=id;refresh();}
  function dimensions(){
   const f=records.find(f=>f.id===selectedId);if(!f||!$('constructionDimensions').checked)return[];
-  return[{a:p2(0,f.z),b:p2(f.x,f.z),text:'X · '+f.left+'cm'},{a:p2(f.x,0),b:p2(f.x,f.z),text:'Z · '+f.front+'cm'}].map(m=>({...m,label:dimensionLabel(m.a,m.b,m.text,records.map(b=>point(b.x,.35,b.z)))}));
+  const occupied=[];return[{a:p2(0,f.z),b:p2(f.x,f.z),text:'X · '+f.left+'cm'},{a:p2(f.x,0),b:p2(f.x,f.z),text:'Z · '+f.front+'cm'}].map(m=>{const label=dimensionLabel(m.a,m.b,m.text,records.map(b=>point(b.x,.35,b.z)),occupied);occupied.push(label.box);return{...m,label};});
  }
  function overlay(){
   let svg='';for(const {a,b,text,label}of dimensions()){
