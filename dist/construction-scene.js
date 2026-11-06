@@ -1,6 +1,23 @@
 import * as THREE from './vendor/three.module.min.js';
 import {floorboxRecords,layerSettings} from './construction-data.mjs';
 
+export function constructionCamera(room,width,height,{mode='split',lift=3.4}={}){
+ const aspect=Math.max(1,width)/Math.max(1,height),{w,d,h}=room;
+ const target=new THREE.Vector3(w/2,mode==='split'?(h+lift)/2:0,d/2);
+ let camera;
+ if(mode==='top'){
+  const span=Math.max(d+2.8,(w+2.8)/aspect);
+  camera=new THREE.OrthographicCamera(-span*aspect/2,span*aspect/2,span/2,-span/2,.1,300);
+  camera.position.set(target.x,60,target.z);camera.up.set(0,0,-1);
+ }else{
+  camera=new THREE.PerspectiveCamera(38,aspect,.1,300);
+  const radius=Math.hypot(w,d,mode==='split'?h+lift:.5)/2,halfAngle=Math.min(19*Math.PI/180,Math.atan(Math.tan(19*Math.PI/180)*aspect));
+  camera.position.copy(target).add(new THREE.Vector3(1,.92,1.25).normalize().multiplyScalar(radius/Math.sin(halfAngle)*1.08));
+ }
+ camera.lookAt(target);camera.updateMatrixWorld(true);
+ return{camera,target,locked:mode==='top'};
+}
+
 export function buildConstructionScene(state,sourceRoom,sourceItems){
  const scene=new THREE.Scene();scene.background=new THREE.Color('#081521');
  const floor=new THREE.Group(),upper=new THREE.Group(),markers=new Map(),materials=new Set(),geometries=new Set(),surfaces=[];

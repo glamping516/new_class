@@ -11,8 +11,8 @@ export function floorboxRecords(state,{includeHidden=true}={}){
 }
 export function constructionNote(state){
  const boxes=state.fixtures.filter(f=>f.kind==='floorbox'),preset=classroomFloorBoxes();
- const provisional=isClassroomRoom(state.room)&&boxes.some(f=>preset.some(p=>p.id===f.id&&Math.abs(p.x-f.x)<.001&&Math.abs(p.z-f.z)<.001));
- return provisional?'기본 교육장 좌표에는 85cm=왼쪽 옆벽, 130cm=싱크대 뒤벽으로 해석한 잠정 위치가 포함됩니다. 기준 벽과 중심·테두리 기준을 현장 실측과 대조하세요.':'현재 저장된 도면의 단자함 중심 좌표입니다. 공사 전 현장 실측과 대조하세요.';
+ const presetApplied=isClassroomRoom(state.room)&&boxes.length===13&&boxes.every(f=>preset.some(p=>p.id===f.id&&Math.abs(p.x-f.x)<.001&&Math.abs(p.z-f.z)<.001));
+ return presetApplied?'교육장 단자함 13개: 스크린벽에서 첫 줄 85cm · 단독 1개는 출입문 맞은편 벽 중앙에서 130cm. 가로 세 열은 좌우 중앙 임시 배치입니다. 세로 12m·앞뒤 211cm 기준 문벽 거리는 482cm로, 이전 360cm와 차이가 있어 공간 깊이 확인이 필요합니다. 중심 기준 / cm.':'현재 저장된 도면의 단자함 중심 좌표입니다. 공사 전 현장 실측과 대조하세요.';
 }
 // Displacement is a presentation transform only; no source coordinates change.
 export function layerSettings({lift=3.4,opacity=.22,floorOnly=false}={}){
@@ -31,4 +31,19 @@ export function dimensionLabel(a,b,text,markers=[],occupied=[]){
   if(!markers.some(p=>box.x<p.x+24&&box.x+box.w>p.x-24&&box.y<p.y+2&&box.y+box.h>p.y-28)&&!occupied.some(r=>box.x<r.x+r.w+5&&box.x+box.w>r.x-5&&box.y<r.y+r.h+5&&box.y+box.h>r.y-5))return fallback;
  }
  return fallback;
+}
+
+// Keep nearby codes (notably the front centre box and the first-row middle box)
+// readable, without moving the physical terminal positions.
+export function terminalLabelPositions(points){
+ const placed=[];
+ return points.map(p=>{
+  let chosen={...p,anchor:{x:p.x,y:p.y},dx:0,dy:0};
+  for(const [dx,dy]of [[0,0],[0,-28],[0,28],[-44,0],[44,0],[0,-56],[0,56],[-44,28],[44,28]]){
+   const x=p.x+dx,y=p.y+dy,box={x:x-22,y:y-27,w:44,h:27};
+   chosen={...p,x,y,anchor:{x:p.x,y:p.y},dx,dy};
+   if(!placed.some(r=>box.x<r.x+r.w+3&&box.x+box.w>r.x-3&&box.y<r.y+r.h+3&&box.y+box.h>r.y-3)){placed.push(box);return chosen;}
+  }
+  placed.push({x:chosen.x-22,y:chosen.y-27,w:44,h:27});return chosen;
+ });
 }

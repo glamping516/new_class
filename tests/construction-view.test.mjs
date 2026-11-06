@@ -1,9 +1,10 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from '../dist/vendor/three.module.min.js';
-import {floorboxRecords,constructionNote,layerSettings,dimensionLabel} from '../dist/construction-data.mjs';
-import {buildConstructionScene} from '../dist/construction-scene.js';
+import {floorboxRecords,constructionNote,layerSettings,dimensionLabel,terminalLabelPositions} from '../dist/construction-data.mjs';
+import {buildConstructionScene,constructionCamera} from '../dist/construction-scene.js';
 import {SoftwareRenderer} from '../dist/software-renderer.js';
+import {classroomFloorBoxes} from '../dist/floor-boxes.mjs';
 const state={room:{w:9,d:12,h:2.7},items:[],fixtures:[
  {id:'port0',kind:'floorbox',name:'바닥 단자 1',x:.85,z:4.18,w:.18,depth:.18},
  {id:'port1',kind:'floorbox',name:'숨긴 단자',x:3.13,z:6.29,w:.18,depth:.18,hidden:true}
@@ -15,7 +16,7 @@ test('inspection numbers and four wall distances use current saved centres and p
  assert.deepEqual(floorboxRecords(state,{includeHidden:false}).map(f=>f.code),['F01']);
  const other={...state,room:{w:10,d:15,h:3},fixtures:[{...state.fixtures[0],x:1.234,z:5.678}]};
  assert.deepEqual(floorboxRecords(other).map(f=>[f.left,f.front,f.right,f.back]),[[123.4,567.8,876.6,932.2]]);
- assert.deepEqual(state,before);assert.match(constructionNote(state),/잠정/);assert.doesNotMatch(constructionNote(other),/85cm/);
+ assert.deepEqual(state,before);assert.match(constructionNote({...state,fixtures:classroomFloorBoxes()}),/스크린벽에서 첫 줄 85cm/);assert.match(constructionNote({...state,fixtures:classroomFloorBoxes()}),/482cm/);assert.doesNotMatch(constructionNote(other),/85cm/);
 });
 
 test('layer separation copies source transforms without moving saved furniture, floors or materials',()=>{
@@ -68,4 +69,29 @@ test('CPU hologram uses scene background, independent line segments and material
   assert.deepEqual(actions.filter(a=>a[0]==='background'),[['background','#081521']]);
   assert.equal(actions.filter(a=>a[0]==='move').length,2);assert.equal(actions.filter(a=>a[0]==='line').length,2);assert.deepEqual(actions.at(-1),['alpha',.35]);
  }finally{globalThis.document=previous;}
+});
+
+test('fixed overhead camera is exactly above the room centre and keeps north at the top for all viewport sizes',()=>{
+ for(const [width,height]of [[1023,850],[600,900],[1800,700]]){
+  const {camera,target,locked}=constructionCamera(state.room,width,height,{mode:'top'});
+  assert.equal(locked,true);assert.equal(camera.isOrthographicCamera,true);
+  assert.deepEqual(camera.position.toArray(),[4.5,60,6]);
+  const centre=target.clone().project(camera);assert.ok(Math.abs(centre.x)<1e-10&&Math.abs(centre.y)<1e-10);
+  const front=new THREE.Vector3(4.5,0,0).project(camera),back=new THREE.Vector3(4.5,0,12).project(camera);
+  assert.ok(front.y>0&&back.y<0);assert.ok(Math.abs(front.x)<1e-10&&Math.abs(back.x)<1e-10);
+  assert.equal(camera.zoom,1);
+ }
+});
+
+test('all 13 number labels remain separate, including the two close front-centre boxes',()=>{
+ const camera=constructionCamera(state.room,1023,850,{mode:'top'}).camera;
+ const boxes=classroomFloorBoxes(),before=structuredClone(boxes);
+ const points=boxes.map(f=>{const p=new THREE.Vector3(f.x,.35,f.z).project(camera);return{id:f.id,x:(p.x+1)*1023/2,y:(1-p.y)*850/2};});
+ const labels=terminalLabelPositions(points);assert.equal(labels.length,13);
+ for(let i=0;i<labels.length;i++)for(let j=i+1;j<labels.length;j++){
+  const a=labels[i],b=labels[j];assert.ok(Math.abs(a.x-b.x)>=47||Math.abs(a.y-b.y)>=30);
+ }
+ assert.deepEqual(boxes,before);
+ assert.ok(labels.at(-1).dx||labels.at(-1).dy);
+ assert.deepEqual(labels.at(-1).anchor,{x:points.at(-1).x,y:points.at(-1).y});
 });

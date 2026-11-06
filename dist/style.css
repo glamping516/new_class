@@ -152,3 +152,10 @@
 @media(max-width:850px){.construction-export-status{top:58px;right:20px;font-size:8px}}
 
 .construction-marker{z-index:2}.construction-wall-label{z-index:1}
+
+#constructionTop{position:absolute;left:50%;top:0;transform:translateX(-50%);padding:11px 16px;border:1px solid #376376;border-radius:7px;background:#102e3e;color:#b6eaf3;font-size:11px;box-shadow:0 3px 20px #0003}
+#constructionTop.active{border-color:#73d0df;background:#1d5061;color:#d3fbff}
+#constructionTop:active:not(:disabled){transform:translateX(-50%) translateY(1px)}
+#constructionOverlay .construction-marker-leader{stroke:#bf9e6b;stroke-dasharray:none;stroke-width:.8}
+.construction-top-locked #constructionViewport{cursor:default}
+@media(max-width:1000px){#constructionTop{top:52px;font-size:10px;padding:9px 12px}}
