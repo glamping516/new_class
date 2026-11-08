@@ -35,15 +35,17 @@ export function dimensionLabel(a,b,text,markers=[],occupied=[]){
 
 // Keep nearby codes (notably the front centre box and the first-row middle box)
 // readable, without moving the physical terminal positions.
-export function terminalLabelPositions(points){
+export function terminalLabelPositions(points,{width=44,height=27,gap=3,viewport}={}){
  const placed=[];
  return points.map(p=>{
   let chosen={...p,anchor:{x:p.x,y:p.y},dx:0,dy:0};
-  for(const [dx,dy]of [[0,0],[0,-28],[0,28],[-44,0],[44,0],[0,-56],[0,56],[-44,28],[44,28]]){
-   const x=p.x+dx,y=p.y+dy,box={x:x-22,y:y-27,w:44,h:27};
+  const step=width+gap,shifts=viewport?[[0,0],[-step,0],[step,0],[-step*2,0],[step*2,0],[-step*3,0],[step*3,0],[0,-height-gap],[0,height+gap],[0,-2*(height+gap)],[0,2*(height+gap)]]:[[0,0],[0,-28],[0,28],[-44,0],[44,0],[0,-56],[0,56],[-44,28],[44,28]];
+  for(const [dx,dy]of shifts){
+   const x=p.x+dx,y=p.y+dy,box={x:x-width/2,y:y-height,w:width,h:height};
    chosen={...p,x,y,anchor:{x:p.x,y:p.y},dx,dy};
-   if(!placed.some(r=>box.x<r.x+r.w+3&&box.x+box.w>r.x-3&&box.y<r.y+r.h+3&&box.y+box.h>r.y-3)){placed.push(box);return chosen;}
+   if(viewport&&(box.x<2||box.y<2||box.x+box.w>viewport.width-2||box.y+box.h>viewport.height-2))continue;
+   if(!placed.some(r=>box.x<r.x+r.w+gap&&box.x+box.w>r.x-gap&&box.y<r.y+r.h+gap&&box.y+box.h>r.y-gap)){placed.push(box);return chosen;}
   }
-  placed.push({x:chosen.x-22,y:chosen.y-27,w:44,h:27});return chosen;
+  placed.push({x:chosen.x-width/2,y:chosen.y-height,w:width,h:height});return chosen;
  });
 }

@@ -95,3 +95,17 @@ test('all 13 number labels remain separate, including the two close front-centre
  assert.ok(labels.at(-1).dx||labels.at(-1).dy);
  assert.deepEqual(labels.at(-1).anchor,{x:points.at(-1).x,y:points.at(-1).y});
 });
+
+test('phone terminal labels stay inside the drawing and clear each other without changing outlet anchors',()=>{
+ for(const [width,height]of [[390,277],[360,230],[768,400]]){
+  const camera=constructionCamera(state.room,width,height,{mode:'top'}).camera;
+  const points=classroomFloorBoxes().map(f=>{const p=new THREE.Vector3(f.x,.35,f.z).project(camera);return{id:f.id,x:(p.x+1)*width/2,y:(1-p.y)*height/2};});
+  const labels=terminalLabelPositions(points,{width:36,height:25,viewport:{width,height}});
+  assert.equal(labels.length,13);
+  for(const [n,p]of labels.entries()){
+   assert.deepEqual(p.anchor,{x:points[n].x,y:points[n].y});
+   assert.ok(p.x-18>=2&&p.x+18<=width-2&&p.y-25>=2&&p.y<=height-2,`${width}×${height}: ${p.id} is inside`);
+  }
+  for(let i=0;i<labels.length;i++)for(let j=i+1;j<labels.length;j++)assert.ok(Math.abs(labels[i].x-labels[j].x)>=39||Math.abs(labels[i].y-labels[j].y)>=28,`${width}×${height}: ${i}/${j} do not overlap`);
+ }
+});
