@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from '../dist/vendor/three.module.min.js';
-import {floorboxRecords,constructionNote,layerSettings,dimensionLabel,terminalLabelPositions} from '../dist/construction-data.mjs';
+import {floorboxRecords,constructionNote,layerSettings,dimensionLabel,terminalLabelPositions,floorboxDimensionSegments} from '../dist/construction-data.mjs';
 import {buildConstructionScene,constructionCamera} from '../dist/construction-scene.js';
 import {SoftwareRenderer} from '../dist/software-renderer.js';
 import {classroomFloorBoxes} from '../dist/floor-boxes.mjs';
@@ -10,13 +10,13 @@ const state={room:{w:9,d:12,h:2.7},items:[],fixtures:[
  {id:'port1',kind:'floorbox',name:'숨긴 단자',x:3.13,z:6.29,w:.18,depth:.18,hidden:true}
 ]};
 
-test('inspection numbers and four wall distances use current saved centres and preserve hidden numbering',()=>{
+test('inspection numbers and four wall distances use actual box edges without changing saved centres and preserve hidden numbering',()=>{
  const before=structuredClone(state),all=floorboxRecords(state);
- assert.deepEqual(all.map(f=>[f.code,f.left,f.front,f.right,f.back]),[['F01',85,418,815,782],['F02',313,629,587,571]]);
+ assert.deepEqual(all.map(f=>[f.code,f.left,f.front,f.right,f.back]),[['F01',76,409,806,773],['F02',304,620,578,562]]);
  assert.deepEqual(floorboxRecords(state,{includeHidden:false}).map(f=>f.code),['F01']);
  const other={...state,room:{w:10,d:15,h:3},fixtures:[{...state.fixtures[0],x:1.234,z:5.678}]};
- assert.deepEqual(floorboxRecords(other).map(f=>[f.left,f.front,f.right,f.back]),[[123.4,567.8,876.6,932.2]]);
- assert.deepEqual(state,before);assert.match(constructionNote({...state,fixtures:classroomFloorBoxes()}),/4열 × 3줄/);assert.match(constructionNote({...state,fixtures:classroomFloorBoxes()}),/문벽에서 가장 가까운 줄까지 360cm/);assert.match(constructionNote({...state,fixtures:classroomFloorBoxes()}),/418cm/);assert.doesNotMatch(constructionNote(other),/360cm/);
+ assert.deepEqual(floorboxRecords(other).map(f=>[f.left,f.front,f.right,f.back]),[[114.4,558.8,867.6,923.2]]);
+ assert.deepEqual(state,before);assert.match(constructionNote({...state,fixtures:classroomFloorBoxes()}),/4열 × 3줄/);assert.match(constructionNote({...state,fixtures:classroomFloorBoxes()}),/문벽→가까운 모서리 360cm/);assert.match(constructionNote({...state,fixtures:classroomFloorBoxes()}),/364cm/);assert.doesNotMatch(constructionNote(other),/360cm/);
 });
 
 test('layer separation copies source transforms without moving saved furniture, floors or materials',()=>{
@@ -111,4 +111,17 @@ test('phone terminal labels stay inside the drawing and clear each other without
   }
   for(let i=0;i<labels.length;i++)for(let j=i+1;j<labels.length;j++)assert.ok(Math.abs(labels[i].x-labels[j].x)>=39||Math.abs(labels[i].y-labels[j].y)>=28,`${width}×${height}: ${i}/${j} do not overlap`);
  }
+});
+
+
+test('inspection lines end at the nearest actual corners and show 360cm to the back wall',()=>{
+ const record=floorboxRecords({room:state.room,fixtures:classroomFloorBoxes()})[8];
+ assert.equal(record.back,360);assert.equal(record.front,822);
+ const lines=floorboxDimensionSegments(record,state.room),back=lines.find(l=>l.wall==='back');
+ assert.ok(back);assert.match(back.text,/360cm/);
+ assert.ok(Math.abs(back.a.z-back.b.z-3.6)<1e-9);
+ assert.equal(back.b.z,record.edges.maxZ);assert.equal(back.b.x,record.edges.minX);
+ assert.ok(lines.some(l=>l.wall==='left'));
+ const right=floorboxRecords({room:state.room,fixtures:classroomFloorBoxes()})[11];
+ assert.ok(floorboxDimensionSegments(right,state.room).some(l=>l.wall==='right'));
 });

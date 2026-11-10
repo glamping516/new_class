@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {classroomFloorBoxes,migrateLegacyFloorBoxes} from '../dist/floor-boxes.mjs';
+import {classroomFloorBoxes,migrateLegacyFloorBoxes,floorboxEdges,floorboxFromEdges} from '../dist/floor-boxes.mjs';
 import {validateFixtures} from '../dist/room-structure.mjs';
 const room={w:9,d:12,h:2.7};
 const walls=[
@@ -14,15 +14,15 @@ const legacy=(count=9)=>[...structuredClone(walls),...Array.from({length:9},(_,n
 })),...(count===10?[{id:'sink-port',kind:'floorbox',name:'싱크대 옆 바닥 단자',x:7.925,z:1.3,w:.18,h:.015,depth:.18,estimated:true}]:[])];
 const near=(a,b)=>assert.ok(Math.abs(a-b)<1e-9,`${a} should equal ${b}`);
 
-test('13 floor boxes form four columns and three rows with the nearest row 360 cm from the door wall',()=>{
+test('13 floor boxes use wall-to-edge and facing-edge gaps, including a 360cm door-wall clearance',()=>{
  const boxes=classroomFloorBoxes(walls),grid=boxes.slice(0,12);
  assert.equal(boxes.length,13);
- assert.deepEqual([...new Set(grid.map(f=>f.x))],[1.08,3.36,5.64,7.92]);
- assert.deepEqual([...new Set(grid.map(f=>f.z))],[4.18,6.29,8.4]);
- for(let row=0;row<3;row++)for(let col=1;col<4;col++)near(grid[row*4+col].x-grid[row*4+col-1].x,2.28);
- for(let row=1;row<3;row++)for(let col=0;col<4;col++)near(grid[row*4+col].z-grid[(row-1)*4+col].z,2.11);
- assert.equal(boxes.at(-1).z,1.3);assert.equal(boxes.at(-1).x,4.5);assert.equal(boxes.at(-1).name,'맞은편 벽 중앙 단자');
- for(const f of grid.slice(-4))near(room.d-f.z,3.6);
+ assert.deepEqual([...new Set(grid.map(f=>f.x))],[.81,3.27,5.73,8.19]);
+ assert.deepEqual([...new Set(grid.map(f=>f.z))],[3.73,6.02,8.31]);
+ for(let row=0;row<3;row++)for(let col=1;col<4;col++)near(floorboxEdges(grid[row*4+col]).minX-floorboxEdges(grid[row*4+col-1]).maxX,2.28);
+ for(let row=1;row<3;row++)for(let col=0;col<4;col++)near(floorboxEdges(grid[row*4+col]).minZ-floorboxEdges(grid[(row-1)*4+col]).maxZ,2.11);
+ near(floorboxEdges(boxes.at(-1)).minZ,1.3);assert.equal(boxes.at(-1).x,4.5);assert.equal(boxes.at(-1).name,'맞은편 벽 중앙 단자');
+ for(const f of grid.slice(-4))near(room.d-floorboxEdges(f).maxZ,3.6);
  assert.ok(boxes.at(-1).z<grid[0].z,'single box is above all three rows when the door is below');
  assert.doesNotThrow(()=>validateFixtures([...walls,...boxes],room));
 });
@@ -32,8 +32,10 @@ const previousThirteen=()=>[...structuredClone(walls),...Array.from({length:12},
  x:[2.22,4.5,6.78][n%3],z:[.85,2.96,5.07,7.18][Math.floor(n/3)],w:.18,h:.015,depth:.18
 })),{id:'front-center-port',kind:'floorbox',name:'맞은편 벽 중앙 단자',x:4.5,z:1.3,w:.18,h:.015,depth:.18,estimated:true}];
 
-test('the previous 3-column 13-box preset updates once and preserves facility edits, names and hidden boxes',()=>{
- const fixtures=previousThirteen();fixtures[0].offset=6.9;fixtures[2].name='통신팀 확인';fixtures[3].hidden=true;
+test('both previous 13-box centre layouts update once and preserve facility edits, names and hidden boxes',()=>{
+ for(const columns of [3,4]){
+ const fixtures=previousThirteen();
+ if(columns===4)fixtures.filter(f=>/^port[0-9]+$/.test(f.id)).forEach((f,n)=>{f.x=[1.08,3.36,5.64,7.92][n%4];f.z=[4.18,6.29,8.4][Math.floor(n/4)];});fixtures[0].offset=6.9;fixtures[2].name='통신팀 확인';fixtures[3].hidden=true;
  const before=structuredClone(fixtures),updated=migrateLegacyFloorBoxes(fixtures,room),ports=updated.filter(f=>f.kind==='floorbox');
  assert.deepEqual(fixtures,before);assert.equal(ports.length,13);
  assert.equal(updated[0],fixtures[0]);assert.equal(updated[1],fixtures[1]);
@@ -41,6 +43,7 @@ test('the previous 3-column 13-box preset updates once and preserves facility ed
  assert.deepEqual(ports.map(f=>[f.id,f.x,f.z]),classroomFloorBoxes().map(f=>[f.id,f.x,f.z]));
  assert.equal(migrateLegacyFloorBoxes(updated,room),updated);
  assert.doesNotThrow(()=>validateFixtures(updated,room));
+ }
 });
 
 test('manual edits or deletions in a saved 13-box layout and other rooms are preserved',()=>{
@@ -77,4 +80,27 @@ test('custom room or fixture edits are preserved and all-hidden layouts keep all
  }
  const collision=[...walls,{...walls[1],id:'front-center-port',offset:3}];
  assert.equal(classroomFloorBoxes(collision).at(-1).id,'front-center-port-1');
+});
+
+
+test('real box sizes change the stored centres while preserving all measured edge gaps',()=>{
+ for(const [w,depth]of [[.2,.3],[.185,.245],[.4,.4]]){
+  const boxes=classroomFloorBoxes(walls,room,{w,depth,estimated:false}),grid=boxes.slice(0,12);
+  assert.ok(boxes.every(f=>f.w===w&&f.depth===depth&&!f.estimated));
+  for(const f of grid.slice(-4))near(room.d-floorboxEdges(f).maxZ,3.6);
+  for(let r=0;r<3;r++)for(let c=1;c<4;c++)near(floorboxEdges(grid[r*4+c]).minX-floorboxEdges(grid[r*4+c-1]).maxX,2.28);
+  for(let r=1;r<3;r++)for(let c=0;c<4;c++)near(floorboxEdges(grid[r*4+c]).minZ-floorboxEdges(grid[(r-1)*4+c]).maxZ,2.11);
+  near(floorboxEdges(boxes.at(-1)).minZ,1.3);
+  near(floorboxEdges(grid[0]).minX,room.w-floorboxEdges(grid[3]).maxX);
+  assert.doesNotThrow(()=>validateFixtures([...walls,...boxes],room));
+ }
+ for(const size of [{w:NaN},{depth:0},{w:1},{depth:3}])assert.throws(()=>classroomFloorBoxes(walls,room,size));
+});
+
+test('corner editing converts to centres once and resizing preserves the entered near corner',()=>{
+ const original={x:2,z:3,w:.18,depth:.18},before=structuredClone(original);
+ const placed=floorboxFromEdges({...original,w:.28,depth:.34},.72,3.64);
+ near(placed.x,.86);near(placed.z,3.81);
+ near(floorboxEdges(placed).minX,.72);near(floorboxEdges(placed).minZ,3.64);
+ assert.deepEqual(original,before);
 });

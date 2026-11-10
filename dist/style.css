@@ -159,3 +159,6 @@
 #constructionOverlay .construction-marker-leader{stroke:#bf9e6b;stroke-dasharray:none;stroke-width:.8}
 .construction-top-locked #constructionViewport{cursor:default}
 @media(max-width:1000px){#constructionTop{top:52px;font-size:10px;padding:9px 12px}}
+
+/* Floor-terminal dimensions are editable before applying the measured edge gaps. */
+.floorbox-size{display:flex;flex-wrap:wrap;gap:12px;margin:14px 0}.floorbox-size label{display:flex;flex-direction:column;gap:6px;font-size:11px;color:#61756a}.floorbox-size input{width:120px;border:1px solid #d7e1da;border-radius:7px;padding:9px 10px;font:inherit;font-size:14px;color:#354d40;background:white}.floorbox-size p{flex-basis:100%;margin:0;font-size:10px;line-height:1.8;color:#6b7e71}

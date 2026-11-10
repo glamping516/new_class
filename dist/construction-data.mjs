@@ -1,18 +1,31 @@
-import {classroomFloorBoxes,isClassroomRoom} from './floor-boxes.mjs';
+import {classroomFloorBoxes,isClassroomRoom,floorboxEdges} from './floor-boxes.mjs';
 
 export const cm=v=>Math.round(v*1000)/10;
 export const formatCm=v=>cm(v).toLocaleString('ko-KR',{maximumFractionDigits:1});
 export function floorboxRecords(state,{includeHidden=true}={}){
- return state.fixtures.filter(f=>f.kind==='floorbox').map((f,n)=>({
+ return state.fixtures.filter(f=>f.kind==='floorbox').map((f,n)=>{const edges=floorboxEdges(f);return{
   id:f.id,code:'F'+String(n+1).padStart(2,'0'),name:f.name||'바닥 단자함',
-  x:f.x,z:f.z,w:f.w,depth:f.depth,hidden:!!f.hidden,
-  left:cm(f.x),front:cm(f.z),right:cm(state.room.w-f.x),back:cm(state.room.d-f.z)
- })).filter(f=>includeHidden||!f.hidden);
+  x:f.x,z:f.z,w:f.w,depth:f.depth,hidden:!!f.hidden,edges,
+  left:cm(edges.minX),front:cm(edges.minZ),right:cm(state.room.w-edges.maxX),back:cm(state.room.d-edges.maxZ)
+ };}).filter(f=>includeHidden||!f.hidden);
 }
 export function constructionNote(state){
- const boxes=state.fixtures.filter(f=>f.kind==='floorbox'),preset=classroomFloorBoxes();
- const presetApplied=isClassroomRoom(state.room)&&boxes.length===13&&boxes.every(f=>preset.some(p=>p.id===f.id&&Math.abs(p.x-f.x)<.001&&Math.abs(p.z-f.z)<.001));
- return presetApplied?'교육장 단자함 13개: 4열 × 3줄 12개 + 맞은편 벽 중앙 1개. 문벽에서 가장 가까운 줄까지 360cm, 좌우 간격 228cm, 앞뒤 간격 211cm입니다. 단독 1개는 출입문 맞은편 벽 중앙에서 130cm입니다. 네 열은 좌우 중앙 임시 배치이며 현재 12m 깊이에서 스크린벽 기준 첫 줄은 418cm로 계산됩니다. 단자함 중심 기준 / cm.':'현재 저장된 도면의 단자함 중심 좌표입니다. 공사 전 현장 실측과 대조하세요.';
+ const boxes=state.fixtures.filter(f=>f.kind==='floorbox');let preset=[];
+ try{if(boxes.length)preset=classroomFloorBoxes([],state.room,boxes[0]);}catch{}
+ const presetApplied=isClassroomRoom(state.room)&&boxes.length===13&&boxes.every(f=>preset.some(p=>p.id===f.id&&Math.abs(p.x-f.x)<.000001&&Math.abs(p.z-f.z)<.000001&&Math.abs(p.w-f.w)<.000001&&Math.abs(p.depth-f.depth)<.000001));
+ if(!presetApplied)return'벽에서 단자함의 가까운 모서리까지의 거리 / cm. 크기는 공간 설정에 입력된 가로·깊이를 사용합니다. 공사 전 현장 실측과 대조하세요.';
+ const first=floorboxEdges(preset[0]),size=boxes[0];
+ return`모서리 기준 / cm. 4열 × 3줄 12개 + 단독 1개. 문벽→가까운 모서리 360cm, 좌우 빈 간격 228cm·앞뒤 211cm. 단독은 맞은편 벽→모서리 130cm입니다. 단자함 ${formatCm(size.w)}×${formatCm(size.depth)}cm${boxes.some(f=>f.estimated!==false)?' (추정값, 실측치로 수정 가능)':''}. 좌우 중앙 임시 배치이며 12m 깊이에서 첫 줄의 스크린벽 거리는 ${formatCm(first.minZ)}cm로 계산됩니다.`;
+}
+
+// Show a perpendicular distance to the nearest wall, ending at an actual corner.
+// The 3D marker itself continues to use the saved centre coordinate.
+export function floorboxDimensionSegments(f,room){
+ const e=f.edges||floorboxEdges(f),right=f.right<f.left,back=f.back<f.front;
+ return[
+  {wall:right?'right':'left',a:{x:right?room.w:0,z:e.minZ},b:{x:right?e.maxX:e.minX,z:e.minZ},text:`${right?'오른쪽벽':'왼쪽벽'} · ${right?f.right:f.left}cm`},
+  {wall:back?'back':'front',a:{x:e.minX,z:back?room.d:0},b:{x:e.minX,z:back?e.maxZ:e.minZ},text:`${back?'후면벽':'정면벽'} · ${back?f.back:f.front}cm`}
+ ];
 }
 // Displacement is a presentation transform only; no source coordinates change.
 export function layerSettings({lift=3.4,opacity=.22,floorOnly=false}={}){
