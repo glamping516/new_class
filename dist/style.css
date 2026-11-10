@@ -175,3 +175,29 @@
 .construction-neighbors p{font-size:9px;line-height:1.7;color:#86a7b8;margin:10px 0 0}
 #constructionOverlay .construction-neighbor-line{stroke:#ffcf89;stroke-dasharray:none;stroke-width:1.4}
 #constructionOverlay .construction-neighbor-text{fill:#ffe2b4}
+
+/* Fixed overhead review keeps the real furniture footprints over the terminals. */
+.construction-plan-panel{padding:16px;margin-bottom:20px;border:1px solid #365260;border-radius:9px;background:#112c39}
+.construction-plan-panel[hidden]{display:none}
+.construction-plan-panel h3{margin:0 0 13px;font-size:12px;font-weight:500;color:#c2e8ef}
+.construction-plan-panel>p{margin:13px 0 8px;font-size:12px;color:#b8dce3;line-height:1.7}
+.construction-plan-panel>small{display:block;font-size:9px;line-height:1.8;color:#8aabb8;margin-top:10px}
+#constructionPlanOverlaps{max-height:130px;overflow-y:auto;scrollbar-width:thin}
+#constructionPlanOverlaps button{width:100%;display:flex;gap:8px;text-align:left;align-items:center;padding:8px 0;color:#ffb6a3;font-size:10px;border-bottom:1px solid #3d4648}
+#constructionPlanOverlaps button b{flex-shrink:0;font-size:10px}
+#constructionPlanOverlaps button span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.construction-coverage{margin:16px 0 0;padding:10px;border:1px solid #386557;border-radius:6px;color:#9ad8c4;background:#133a3022;font-size:10px;line-height:1.8}
+.construction-coverage.has-overlap{border-color:#9c695c;background:#9f554c22;color:#ffc0ad}
+#constructionOverlay .construction-plan-item{stroke-width:1.2;stroke-dasharray:none;pointer-events:none}
+#constructionOverlay .construction-plan-item.has-overlap{stroke-width:1.8}
+#constructionOverlay .construction-plan-intersection{fill:#ff735b;fill-opacity:.55;stroke:#ffa78f;stroke-width:.7}
+#constructionOverlay .construction-plan-plate{fill:#ffcb77;fill-opacity:.6;stroke:#ffe3b0;stroke-width:1.2}
+#constructionOverlay .construction-plan-plate.has-overlap{fill:#ff7b61;stroke:#ffb29f;fill-opacity:.8;stroke-width:1.8}
+#constructionOverlay .construction-plan-label{fill:#b2edf0;font-size:9px;stroke:#081521;stroke-width:3px;paint-order:stroke;letter-spacing:.3px}
+.construction-marker.has-overlap{border-color:#f8957b;color:#ffd0ba;background:#693d35;box-shadow:0 0 0 3px #ff846128}
+.construction-marker.has-overlap.selected{background:#ffd59b;color:#3e2420;border-color:#ff9c7d;box-shadow:0 0 0 4px #ff8c6544}
+.construction-plan-key{display:none!important}
+.construction-plan-view .construction-layer-legend>span:first-child,.construction-plan-view .construction-plan-key{display:flex!important}
+.construction-plan-view .construction-layer-legend>span:first-child i{background:#78c9d7}
+.construction-plan-view .construction-plan-key i{background:#ff9379}
+.construction-plan-view .construction-plan-key b{color:#ffbaa4}
