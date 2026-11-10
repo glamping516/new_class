@@ -12,7 +12,7 @@ export function floorboxRecords(state,{includeHidden=true}={}){
 export function constructionNote(state){
  const boxes=state.fixtures.filter(f=>f.kind==='floorbox'),preset=classroomFloorBoxes();
  const presetApplied=isClassroomRoom(state.room)&&boxes.length===13&&boxes.every(f=>preset.some(p=>p.id===f.id&&Math.abs(p.x-f.x)<.001&&Math.abs(p.z-f.z)<.001));
- return presetApplied?'교육장 단자함 13개: 스크린벽에서 첫 줄 85cm · 단독 1개는 출입문 맞은편 벽 중앙에서 130cm. 가로 세 열은 좌우 중앙 임시 배치입니다. 세로 12m·앞뒤 211cm 기준 문벽 거리는 482cm로, 이전 360cm와 차이가 있어 공간 깊이 확인이 필요합니다. 중심 기준 / cm.':'현재 저장된 도면의 단자함 중심 좌표입니다. 공사 전 현장 실측과 대조하세요.';
+ return presetApplied?'교육장 단자함 13개: 4열 × 3줄 12개 + 맞은편 벽 중앙 1개. 문벽에서 가장 가까운 줄까지 360cm, 좌우 간격 228cm, 앞뒤 간격 211cm입니다. 단독 1개는 출입문 맞은편 벽 중앙에서 130cm입니다. 네 열은 좌우 중앙 임시 배치이며 현재 12m 깊이에서 스크린벽 기준 첫 줄은 418cm로 계산됩니다. 단자함 중심 기준 / cm.':'현재 저장된 도면의 단자함 중심 좌표입니다. 공사 전 현장 실측과 대조하세요.';
 }
 // Displacement is a presentation transform only; no source coordinates change.
 export function layerSettings({lift=3.4,opacity=.22,floorOnly=false}={}){

@@ -16,7 +16,7 @@ test('inspection numbers and four wall distances use current saved centres and p
  assert.deepEqual(floorboxRecords(state,{includeHidden:false}).map(f=>f.code),['F01']);
  const other={...state,room:{w:10,d:15,h:3},fixtures:[{...state.fixtures[0],x:1.234,z:5.678}]};
  assert.deepEqual(floorboxRecords(other).map(f=>[f.left,f.front,f.right,f.back]),[[123.4,567.8,876.6,932.2]]);
- assert.deepEqual(state,before);assert.match(constructionNote({...state,fixtures:classroomFloorBoxes()}),/스크린벽에서 첫 줄 85cm/);assert.match(constructionNote({...state,fixtures:classroomFloorBoxes()}),/482cm/);assert.doesNotMatch(constructionNote(other),/85cm/);
+ assert.deepEqual(state,before);assert.match(constructionNote({...state,fixtures:classroomFloorBoxes()}),/4열 × 3줄/);assert.match(constructionNote({...state,fixtures:classroomFloorBoxes()}),/문벽에서 가장 가까운 줄까지 360cm/);assert.match(constructionNote({...state,fixtures:classroomFloorBoxes()}),/418cm/);assert.doesNotMatch(constructionNote(other),/360cm/);
 });
 
 test('layer separation copies source transforms without moving saved furniture, floors or materials',()=>{
@@ -83,7 +83,7 @@ test('fixed overhead camera is exactly above the room centre and keeps north at 
  }
 });
 
-test('all 13 number labels remain separate, including the two close front-centre boxes',()=>{
+test('all 13 number labels remain separate and nearby custom boxes move only their labels',()=>{
  const camera=constructionCamera(state.room,1023,850,{mode:'top'}).camera;
  const boxes=classroomFloorBoxes(),before=structuredClone(boxes);
  const points=boxes.map(f=>{const p=new THREE.Vector3(f.x,.35,f.z).project(camera);return{id:f.id,x:(p.x+1)*1023/2,y:(1-p.y)*850/2};});
@@ -92,8 +92,11 @@ test('all 13 number labels remain separate, including the two close front-centre
   const a=labels[i],b=labels[j];assert.ok(Math.abs(a.x-b.x)>=47||Math.abs(a.y-b.y)>=30);
  }
  assert.deepEqual(boxes,before);
- assert.ok(labels.at(-1).dx||labels.at(-1).dy);
  assert.deepEqual(labels.at(-1).anchor,{x:points.at(-1).x,y:points.at(-1).y});
+ const nearby=terminalLabelPositions([{x:300,y:200},{x:300,y:208}]);
+ assert.ok(nearby[1].dx||nearby[1].dy);
+ assert.ok(Math.abs(nearby[0].x-nearby[1].x)>=47||Math.abs(nearby[0].y-nearby[1].y)>=30);
+ assert.deepEqual(nearby[1].anchor,{x:300,y:208});
 });
 
 test('phone terminal labels stay inside the drawing and clear each other without changing outlet anchors',()=>{

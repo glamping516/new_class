@@ -14,16 +14,42 @@ const legacy=(count=9)=>[...structuredClone(walls),...Array.from({length:9},(_,n
 })),...(count===10?[{id:'sink-port',kind:'floorbox',name:'싱크대 옆 바닥 단자',x:7.925,z:1.3,w:.18,h:.015,depth:.18,estimated:true}]:[])];
 const near=(a,b)=>assert.ok(Math.abs(a-b)<1e-9,`${a} should equal ${b}`);
 
-test('13 floor boxes start 85 cm from the screen wall with four 211 cm rows and three 228 cm columns',()=>{
+test('13 floor boxes form four columns and three rows with the nearest row 360 cm from the door wall',()=>{
  const boxes=classroomFloorBoxes(walls),grid=boxes.slice(0,12);
  assert.equal(boxes.length,13);
- assert.deepEqual([...new Set(grid.map(f=>f.x))],[2.22,4.5,6.78]);
- assert.deepEqual([...new Set(grid.map(f=>f.z))],[.85,2.96,5.07,7.18]);
- for(let row=0;row<4;row++)for(let col=1;col<3;col++)near(grid[row*3+col].x-grid[row*3+col-1].x,2.28);
- for(let row=1;row<4;row++)for(let col=0;col<3;col++)near(grid[row*3+col].z-grid[(row-1)*3+col].z,2.11);
+ assert.deepEqual([...new Set(grid.map(f=>f.x))],[1.08,3.36,5.64,7.92]);
+ assert.deepEqual([...new Set(grid.map(f=>f.z))],[4.18,6.29,8.4]);
+ for(let row=0;row<3;row++)for(let col=1;col<4;col++)near(grid[row*4+col].x-grid[row*4+col-1].x,2.28);
+ for(let row=1;row<3;row++)for(let col=0;col<4;col++)near(grid[row*4+col].z-grid[(row-1)*4+col].z,2.11);
  assert.equal(boxes.at(-1).z,1.3);assert.equal(boxes.at(-1).x,4.5);assert.equal(boxes.at(-1).name,'맞은편 벽 중앙 단자');
- near(room.d-grid.at(-1).z,4.82);
+ for(const f of grid.slice(-4))near(room.d-f.z,3.6);
+ assert.ok(boxes.at(-1).z<grid[0].z,'single box is above all three rows when the door is below');
  assert.doesNotThrow(()=>validateFixtures([...walls,...boxes],room));
+});
+
+const previousThirteen=()=>[...structuredClone(walls),...Array.from({length:12},(_,n)=>({
+ id:`port${n}`,kind:'floorbox',name:`바닥 단자 ${n+1}`,estimated:true,
+ x:[2.22,4.5,6.78][n%3],z:[.85,2.96,5.07,7.18][Math.floor(n/3)],w:.18,h:.015,depth:.18
+})),{id:'front-center-port',kind:'floorbox',name:'맞은편 벽 중앙 단자',x:4.5,z:1.3,w:.18,h:.015,depth:.18,estimated:true}];
+
+test('the previous 3-column 13-box preset updates once and preserves facility edits, names and hidden boxes',()=>{
+ const fixtures=previousThirteen();fixtures[0].offset=6.9;fixtures[2].name='통신팀 확인';fixtures[3].hidden=true;
+ const before=structuredClone(fixtures),updated=migrateLegacyFloorBoxes(fixtures,room),ports=updated.filter(f=>f.kind==='floorbox');
+ assert.deepEqual(fixtures,before);assert.equal(ports.length,13);
+ assert.equal(updated[0],fixtures[0]);assert.equal(updated[1],fixtures[1]);
+ assert.equal(ports[0].name,'통신팀 확인');assert.equal(ports[1].hidden,true);
+ assert.deepEqual(ports.map(f=>[f.id,f.x,f.z]),classroomFloorBoxes().map(f=>[f.id,f.x,f.z]));
+ assert.equal(migrateLegacyFloorBoxes(updated,room),updated);
+ assert.doesNotThrow(()=>validateFixtures(updated,room));
+});
+
+test('manual edits or deletions in a saved 13-box layout and other rooms are preserved',()=>{
+ for(const edit of [f=>f[2].x+=.01,f=>f[2].depth=.2,f=>f[2].estimated=false,f=>f.at(-1).z=1.4,f=>f.pop(),f=>f.push({...f[2],id:'manual-port'}),f=>f[1].wall='front',f=>f.splice(1,1)]){
+  const fixtures=previousThirteen();edit(fixtures);assert.equal(migrateLegacyFloorBoxes(fixtures,room),fixtures);
+ }
+ const fixtures=previousThirteen();assert.equal(migrateLegacyFloorBoxes(fixtures,{...room,w:12}),fixtures);
+ const hidden=previousThirteen();hidden.filter(f=>f.kind==='floorbox').forEach(f=>f.hidden=true);
+ assert.ok(migrateLegacyFloorBoxes(hidden,room).filter(f=>f.kind==='floorbox').every(f=>f.hidden));
 });
 
 test('both shipped 9- and 10-box layouts migrate once while preserving wall facilities, custom names and visibility',()=>{
