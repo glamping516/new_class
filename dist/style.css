@@ -201,3 +201,20 @@
 .construction-plan-view .construction-layer-legend>span:first-child i{background:#78c9d7}
 .construction-plan-view .construction-plan-key i{background:#ff9379}
 .construction-plan-view .construction-plan-key b{color:#ffbaa4}
+
+/* Terminal numbers sit above their plate, and fixed view lists all wall distances. */
+.construction-marker,.construction-marker:active{transform:translate(-50%,-100%)!important}
+#constructionLabels .construction-marker,#constructionLabels .construction-marker:active{min-width:30px;padding:4px 6px;height:25px}
+.construction-overview-toggle{display:flex;align-items:center;gap:7px;font-size:11px;color:#bddfe8;margin:0 0 12px}
+.construction-overview-toggle input{accent-color:#5ac6df}
+.construction-overview-toggle[hidden],.construction-wall-overview[hidden]{display:none}
+.construction-wall-overview{margin-bottom:18px;padding:13px 10px;border:1px solid #365260;border-radius:8px;background:#112a38}
+.construction-wall-overview h3{font-size:11px;font-weight:500;color:#d5eaf0;margin:0 0 12px}
+.construction-wall-overview h3 small{display:block;color:#87acbd;font-size:9px;margin-top:5px}
+.construction-wall-heading,.construction-wall-row{display:grid;grid-template-columns:27px repeat(4,minmax(0,1fr));gap:4px;align-items:center;text-align:right;font-variant-numeric:tabular-nums}
+.construction-wall-heading{font-size:9px;color:#8fb9c9;padding:0 0 8px;border-bottom:1px solid #35515f}
+.construction-wall-heading>span:first-child,.construction-wall-row>b{text-align:left}
+.construction-wall-row{width:100%;padding:9px 0;border-bottom:1px solid #24424f;font-size:10px;color:#cce2e9}
+.construction-wall-row>b{color:#ffcf8e;font-size:10px}
+.construction-wall-row.selected,.construction-wall-row:hover{color:#ffe0ac;background:#ffffff07}
+.construction-wall-overview>p{font-size:9px;line-height:1.7;color:#88aabb;margin:10px 0 0}

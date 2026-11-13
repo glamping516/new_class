@@ -3,11 +3,16 @@ import {classroomFloorBoxes,isClassroomRoom,floorboxEdges,FLOORBOX_MEASUREMENTS}
 export const cm=v=>Math.round(v*10000)/100;
 export const formatCm=v=>cm(v).toLocaleString('ko-KR',{maximumFractionDigits:2});
 export function floorboxRecords(state,{includeHidden=true}={}){
- return state.fixtures.filter(f=>f.kind==='floorbox').map((f,n)=>{const edges=floorboxEdges(f);return{
-  id:f.id,code:'F'+String(n+1).padStart(2,'0'),name:f.name||'바닥 단자함',
+ const fixtures=state.fixtures.filter(f=>f.kind==='floorbox');
+ const fixedNumber=f=>f.id==='front-center-port'?13:/^port(?:[0-9]|1[01])$/.test(f.id)?Number(f.id.slice(4))+1:null;
+ const used=new Set(fixtures.map(fixedNumber).filter(n=>n!==null));let next=1;
+ return fixtures.map(f=>{const edges=floorboxEdges(f);let number=fixedNumber(f);
+  if(number===null){while(used.has(next))next++;number=next;used.add(number);}
+  return{
+  id:f.id,code:String(number).padStart(2,'0'),name:f.name||'바닥 단자함',
   x:f.x,z:f.z,w:f.w,depth:f.depth,hidden:!!f.hidden,edges,
   left:cm(edges.minX),front:cm(edges.minZ),right:cm(state.room.w-edges.maxX),back:cm(state.room.d-edges.maxZ)
- };}).filter(f=>includeHidden||!f.hidden);
+ };}).sort((a,b)=>Number(a.code)-Number(b.code)).filter(f=>includeHidden||!f.hidden);
 }
 export function constructionNote(state){
  const boxes=state.fixtures.filter(f=>f.kind==='floorbox');let preset=[];
@@ -70,6 +75,35 @@ export function floorboxNeighborSegments(selected,records){
   text:`${selected.code} ↔ ${c.other.code} · ${cm(c.distance)}cm`
  }));
 }
+
+// Each adjacent pair is drawn once; the sidebar retains every four-wall value.
+export function floorboxOverviewSegments(records,room,{walls=true,neighbors=true}={}){
+ const result=[],seen=new Set();
+ if(neighbors)for(const f of records)for(const line of floorboxNeighborSegments(f,records)){
+  const key=[f.id,line.targetId].sort().join('|');if(seen.has(key))continue;seen.add(key);
+  result.push({...line,key,fromId:f.id,fromCode:f.code,toCode:line.code,text:`${line.distance}cm`,detail:line.text});
+ }
+ if(walls&&records.length){
+  const outer={left:Math.min(...records.map(f=>f.edges.minX)),right:Math.max(...records.map(f=>f.edges.maxX)),front:Math.min(...records.map(f=>f.edges.minZ)),back:Math.max(...records.map(f=>f.edges.maxZ))};
+  for(const f of records)for(const line of floorboxDimensionSegments(f,room)){
+   const value=f.edges[({left:'minX',right:'maxX',front:'minZ',back:'maxZ'})[line.wall]];
+   if(Math.abs(value-outer[line.wall])>1e-6)continue;
+   result.push({...line,fromId:f.id,text:`${f[line.wall]}cm`,detail:`${f.code} · ${line.text}`});
+  }
+ }
+ return result;
+}
+
+// Fit only the actual drawing and its annotations, with a small uniform margin.
+export function drawingExportFrame(points,rectangles=[],{resolution=2600,padding=18}={}){
+ const all=points.filter(p=>Number.isFinite(p.x)&&Number.isFinite(p.y));
+ for(const r of rectangles)if([r.x,r.y,r.w,r.h].every(Number.isFinite))all.push({x:r.x,y:r.y},{x:r.x+r.w,y:r.y+r.h});
+ if(!all.length)all.push({x:0,y:0},{x:1,y:1});
+ const x=Math.floor(Math.min(...all.map(p=>p.x))-padding),y=Math.floor(Math.min(...all.map(p=>p.y))-padding);
+ const w=Math.max(1,Math.ceil(Math.max(...all.map(p=>p.x))+padding)-x),h=Math.max(1,Math.ceil(Math.max(...all.map(p=>p.y))+padding)-y);
+ const scale=resolution/Math.max(w,h);
+ return{x,y,w,h,scale,width:Math.max(1,Math.round(w*scale)),height:Math.max(1,Math.round(h*scale))};
+}
 // Displacement is a presentation transform only; no source coordinates change.
 export function layerSettings({lift=3.4,opacity=.22,floorOnly=false}={}){
  return{lift:Math.min(6,Math.max(2,Number(lift)||3.4)),opacity:Math.min(.45,Math.max(.05,Number(opacity)||.22)),floorOnly:!!floorOnly};
@@ -91,15 +125,17 @@ export function dimensionLabel(a,b,text,markers=[],occupied=[]){
 
 // Keep nearby codes (notably the front centre box and the first-row middle box)
 // readable, without moving the physical terminal positions.
-export function terminalLabelPositions(points,{width=44,height=27,gap=3,viewport}={}){
+export function terminalLabelPositions(points,{width=44,height=27,gap=3,viewport,lift=0}={}){
  const placed=[];
  return points.map(p=>{
   let chosen={...p,anchor:{x:p.x,y:p.y},dx:0,dy:0};
-  const step=width+gap,shifts=viewport?[[0,0],[-step,0],[step,0],[-step*2,0],[step*2,0],[-step*3,0],[step*3,0],[0,-height-gap],[0,height+gap],[0,-2*(height+gap)],[0,2*(height+gap)]]:[[0,0],[0,-28],[0,28],[-44,0],[44,0],[0,-56],[0,56],[-44,28],[44,28]];
+  const step=width+gap,shifts=p.plate?Array.from({length:7},(_,row)=>[0,-1,1,-2,2,-3,3,-4,4,-5,5].map(col=>[col*step,-row*(height+gap)])).flat():viewport?[[0,0],[-step,0],[step,0],[-step*2,0],[step*2,0],[-step*3,0],[step*3,0],[0,-height-gap],[0,height+gap],[0,-2*(height+gap)],[0,2*(height+gap)]]:[[0,0],[0,-28],[0,28],[-44,0],[44,0],[0,-56],[0,56],[-44,28],[44,28]];
   for(const [dx,dy]of shifts){
-   const x=p.x+dx,y=p.y+dy,box={x:x-width/2,y:y-height,w:width,h:height};
-   chosen={...p,x,y,anchor:{x:p.x,y:p.y},dx,dy};
+   const x=p.x+dx,y=p.y-(p.lift??lift)+dy,box={x:x-width/2,y:y-height,w:width,h:height};
+   chosen={...p,x,y,anchor:{x:p.x,y:p.y},dx,dy:y-p.y};
    if(viewport&&(box.x<2||box.y<2||box.x+box.w>viewport.width-2||box.y+box.h>viewport.height-2))continue;
+   if(p.plate&&box.y+box.h>p.plate.minY-6)continue;
+   if(points.some(q=>q.plate&&box.x<q.plate.maxX+5&&box.x+box.w>q.plate.minX-5&&box.y<q.plate.maxY+5&&box.y+box.h>q.plate.minY-5))continue;
    if(!placed.some(r=>box.x<r.x+r.w+gap&&box.x+box.w>r.x-gap&&box.y<r.y+r.h+gap&&box.y+box.h>r.y-gap)){placed.push(box);return chosen;}
   }
   placed.push({x:chosen.x-width/2,y:chosen.y-height,w:width,h:height});return chosen;
