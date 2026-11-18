@@ -45,6 +45,7 @@ export function tapePlan(state,catalog=CATALOG){
  const references=objects.filter(i=>!grouped.has(i.id)).map(i=>({...i,refs:nearestWallReferences(i,state.room,catalog)}));
  const cues=[];
  if(grid){for(const r of grid.rows)cues.push({key:'row-'+r.number,x:grid.columns[0].minX-.25,z:r.front,text:`${r.number}행 · 정 ${tapeCm(r.front)}`,kind:'row',align:'end'});for(const c of grid.columns)cues.push({key:'col-'+c.number,x:c.minX,z:grid.rows[0].front-.48,text:`${c.number}열 · 좌 ${tapeCm(c.minX)}`,kind:'column',align:'start'});}
+ for(const cue of cues){const row=cue.kind==='row',n=Number(cue.key.split('-')[1])-1;cue.a=row?{x:grid.columns[0].minX,z:0}:{x:0,z:grid.rows[0].front};cue.b=row?{x:grid.columns[0].minX,z:grid.rows[n].front}:{x:grid.columns[n].minX,z:grid.rows[0].front};cue.distance=row?cue.b.z:cue.b.x;}
  return{objects,grid,references,cues,measurements:grid?.measurements||[]};
 }
 

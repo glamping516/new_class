@@ -38,7 +38,7 @@ test('round-table pair distances use circular edges and preserve distances under
  const turned=objectPairMeasurement({...a,rot:45},{...b,rot:45});close(turned.horizontal,2);close(turned.vertical,0);
 });
 test('CAD defaults to practical dimensions and keeps essential panel offsets when optional layers are off',()=>{
- const normal=cadDrawing(state);assert.equal(normal.visibleWalls.length,0);assert.equal(normal.visibleCorners.length,7);assert.equal(normal.references.filter(r=>r.item.panel).length,14);
+ const normal=cadDrawing(state);assert.equal(normal.visibleWalls.length,0);assert.equal((normal.svg.match(/class="cad-reference-dimension"/g)||[]).length,normal.references.length*2);assert.equal(normal.visibleCorners.length,7);assert.equal(normal.references.filter(r=>r.item.panel).length,14);
  const reduced=cadDrawing(state,{walls:false,dimensions:false,labels:false,terminals:false});assert.equal(reduced.references.length,14);assert.equal(reduced.visibleCorners.length,0);assert(reduced.svg.includes('판넬')||reduced.svg.includes('좌'));
  const pair=cadDrawing(state,{pairFrom:'desk0',pairTo:'desk17'});assert(pair.pair.distance>0);assert(pair.svg.includes('class="cad-pair-distance"'));
 });
