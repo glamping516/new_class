@@ -1,6 +1,7 @@
 import {CATALOG,isDesk} from './furniture.mjs';
-import {bounds,corners,dimsOf,clearanceMeasurements,wallGaps} from './geometry.mjs';
+import {bounds,corners,dimsOf} from './geometry.mjs';
 import {deskCornerMeasurements,hasDeskCorners} from './desk-corners.mjs';
+import {wallCornerMeasurements,fixedWallMeasurementItems} from './wall-corners.mjs';
 import {floorboxRecords} from './construction-data.mjs';
 
 export const cadNumber=value=>Number((value*100).toFixed(2)).toLocaleString('ko-KR',{maximumFractionDigits:2});
@@ -18,14 +19,14 @@ export function cadPlanData(state,catalog=CATALOG){
   const dims=dimsOf(item,catalog),polygon=corners(item,catalog),box=bounds(item,catalog),round=['roundTable','stool'].includes(spec.model)||(spec.model==='bin'&&spec.style==='pedal');
   items.push({...item,code:(isDesk(item.type)?'D':hasDeskCorners(item,catalog)?'T':'G')+String(index+1).padStart(2,'0'),name:item.name||spec.name,dims,polygon,box,round,wallMounted:!!spec.wallMounted||spec.category==='wallcover',raised:(item.y||0)>.05,desk:hasDeskCorners(item,catalog)});
  }
- const floor=items.filter(i=>!i.raised&&!i.wallMounted),records=floorboxRecords(state,{includeHidden:false}),fixtures=state.fixtures.filter(f=>!f.hidden&&f.kind!=='floorbox').map(f=>({...f,...fixturePlan(f,state.room)}));
- return{room:{...state.room},items,records,fixtures,corners:deskCornerMeasurements(state.items,catalog),walls:clearanceMeasurements(floor,state.room,catalog).filter(m=>m.kind==='wall')};
+ const wallItems=[...items.filter(i=>catalog.find(c=>c.type===i.type)?.category!=='wallcover'),...fixedWallMeasurementItems(state.fixtures,state.room)],records=floorboxRecords(state,{includeHidden:false}),fixtures=state.fixtures.filter(f=>!f.hidden&&f.kind!=='floorbox').map(f=>({...f,...fixturePlan(f,state.room)}));
+ return{room:{...state.room},items,records,fixtures,corners:deskCornerMeasurements(state.items,catalog),walls:wallCornerMeasurements(wallItems,state.room,catalog)};
 }
 
 // A self-contained vector drawing. UI controls and the inventory are never
 // placed inside this SVG, so all export formats contain the plan only.
 export function cadDrawing(state,options={},catalog=CATALOG){
- const o={labels:true,dimensions:true,walls:true,terminals:true,grid:false,sizes:false,theme:'paper',selectedId:null,scope:'all',...options},data=cadPlanData(state,catalog),selected=data.items.find(i=>i.id===o.selectedId),w=state.room.w*100,d=state.room.d*100;
+ const o={labels:true,dimensions:true,walls:true,terminals:true,grid:false,sizes:false,theme:'paper',selectedId:null,scope:'all',wallDirection:'all',...options},data=cadPlanData(state,catalog),selected=data.items.find(i=>i.id===o.selectedId),w=state.room.w*100,d=state.room.d*100;
  const ink=o.theme==='blueprint'?{bg:'#10283d',wall:'#d3edf9',item:'#b7d9e9',desk:'#f0f9ff',fill:'#17374e',dim:'#70d1df',wallDim:'#9eb9ce',muted:'#92adbf',grid:'#1d3d53',select:'#ffd08a',port:'#e5bd77'}:{bg:'#fff',wall:'#27333e',item:'#6d7e8b',desk:'#293b48',fill:'#f6f8f9',dim:'#266d87',wallDim:'#73838d',muted:'#77838e',grid:'#edf0f3',select:'#bd6538',port:'#956a38'};
  const output=[],occupied=[],extents=[{x:-130,y:-140},{x:w+145,y:d+150}];
  const path=(a,b)=>`M${a.x} ${a.y}L${b.x} ${b.y}`;
@@ -34,19 +35,19 @@ export function cadDrawing(state,options={},catalog=CATALOG){
  const halo=`stroke="${ink.bg}" stroke-width="5" paint-order="stroke" stroke-linejoin="round"`;
  const addRect=(x,y,width,height)=>occupied.push({x,y,w:width,h:height});
  const intersects=(a,b)=>a.x<b.x+b.w+3&&a.x+a.w>b.x-3&&a.y<b.y+b.h+3&&a.y+a.h>b.y-3;
- const label=(a,b,value,color)=>{
-  const cx=(a.x+b.x)/2,cy=(a.y+b.y)/2,len=Math.hypot(b.x-a.x,b.y-a.y)||1,n={x:-(b.y-a.y)/len,y:(b.x-a.x)/len},tw=String(value).length*7.2+6;let p={x:cx+n.x*11,y:cy+n.y*11},box;
+ const label=(a,b,value,color,{at,normal,size=12.5}={})=>{
+  const cx=at?.x??(a.x+b.x)/2,cy=at?.y??(a.y+b.y)/2,len=Math.hypot(b.x-a.x,b.y-a.y)||1,n=normal??{x:-(b.y-a.y)/len,y:(b.x-a.x)/len},tw=String(value).length*size*.58+6;let p={x:cx+n.x*11,y:cy+n.y*11},box;
   for(const shift of [11,-11,25,-25,40,-40,55,-55]){const q={x:cx+n.x*shift,y:cy+n.y*shift},r={x:q.x-tw/2,y:q.y-12,w:tw,h:17};p=q;box=r;if(!occupied.some(b=>intersects(r,b)))break;}
   occupied.push(box);extents.push({x:box.x,y:box.y},{x:box.x+box.w,y:box.y+box.h});
   if(Math.hypot(p.x-cx,p.y-cy)>18)output.push(line({x:cx,y:cy},{x:p.x,y:p.y-3},color,'stroke-width=".65" opacity=".5"'));
-  output.push(text(p,value,{color,size:12.5,weight:600,extra:halo}));
+  output.push(text(p,value,{color,size,weight:600,extra:halo}));
  };
- const dimension=(a,b,value,color=ink.dim,{witnesses=false}={})=>{
+ const dimension=(a,b,value,color=ink.dim,{witnesses=false,wallCorner=null}={})=>{
   const length=Math.hypot(b.x-a.x,b.y-a.y),dx=(b.x-a.x)/(length||1),dy=(b.y-a.y)/(length||1),tx=-dy*3.2,ty=dx*3.2;
-  extents.push(a,b);output.push(line(a,b,color,'stroke-width=".85"'));
+  extents.push(a,b);output.push(line(a,b,color,wallCorner?'stroke-width=".6" stroke-dasharray="3 3" opacity=".45"':'stroke-width=".85"'));
   for(const p of [a,b])output.push(line({x:p.x-tx-dx*2,y:p.y-ty-dy*2},{x:p.x+tx+dx*2,y:p.y+ty+dy*2},color,'stroke-width="1.1"'));
   if(witnesses)for(const p of [a,b])output.push(`<circle cx="${p.x}" cy="${p.y}" r="1.9" fill="${color}" stroke="none"/>`);
-  label(a,b,value,color);
+  if(wallCorner){const dir=({front:{x:0,y:-1},back:{x:0,y:1},left:{x:-1,y:0},right:{x:1,y:0}})[wallCorner.wall],step=Math.min(18,length/2);label(a,b,value,color,{at:{x:a.x+dir.x*step,y:a.y+dir.y*step},normal:{x:-dir.y,y:dir.x},size:10.5});}else label(a,b,value,color);
  };
  const offsetDimension=(a,b,offset,value,color=ink.wallDim)=>{
   const horizontal=Math.abs(a.y-b.y)<1e-6,p=horizontal?{x:a.x,y:a.y+offset}:{x:a.x+offset,y:a.y},q=horizontal?{x:b.x,y:b.y+offset}:{x:b.x+offset,y:b.y};
@@ -81,7 +82,8 @@ export function cadDrawing(state,options={},catalog=CATALOG){
  if(o.terminals)for(const f of data.records){const p=xy(f),iw=f.w*100,id=f.depth*100;output.push(`<g fill="none" stroke="${ink.port}" stroke-width="1"><rect x="${p.x-iw/2}" y="${p.y-id/2}" width="${iw}" height="${id}"/><path d="M${p.x-4} ${p.y}H${p.x+4}M${p.x} ${p.y-4}V${p.y+4}"/><path d="M${p.x} ${p.y-id/2}V${p.y-19}" stroke-width=".6"/></g>`,text({x:p.x,y:p.y-23},f.code,{color:ink.port,size:10.5,weight:600,extra:halo}));}
  const visibleCorners=o.dimensions?data.corners.filter(m=>o.scope!=='selected'||!selected||m.from===selected.id||m.to===selected.id):[];
  for(const m of visibleCorners)dimension(xy(m.a),xy(m.b),(m.overlapping?'겹침 · ':'')+cadNumber(m.distance),m.overlapping?'#b35d42':ink.dim,{witnesses:true});
- if(o.walls){const walls=selected&&o.scope==='selected'?wallGaps(selected,state.room,catalog):data.walls;for(const m of walls)dimension(xy(m.a),xy(m.b),cadNumber(m.distance),ink.wallDim);}
+ const visibleWalls=o.walls?data.walls.filter(m=>(!selected||o.scope!=='selected'||m.from===selected.id)&&(o.wallDirection==='all'||m.wall===o.wallDirection)):[];
+ for(const m of visibleWalls){output.push(`<g class="cad-wall-corner" data-from="${cadEscape(m.from)}" data-wall="${m.wall}" data-corner="${m.corner??'edge'}"><title>${cadEscape(m.objectName+' · '+m.label+' · '+cadNumber(m.distance)+'cm')}</title>`);dimension(xy(m.a),xy(m.b),m.wallCode+' '+cadNumber(m.distance),ink.wallDim,{witnesses:true,wallCorner:m});output.push('</g>');}
  // Opening positions and widths form a CAD-style chain along each wall.
  for(const wall of ['front','back','left','right']){
   const holes=data.fixtures.filter(f=>f.wall===wall&&['door','window'].includes(f.kind));if(!holes.length)continue;
@@ -90,11 +92,12 @@ export function cadDrawing(state,options={},catalog=CATALOG){
  }
  offsetDimension({x:0,y:0},{x:w,y:0},-92,cadNumber(state.room.w));
  offsetDimension({x:w,y:0},{x:w,y:d},96,cadNumber(state.room.d));
+ output.push(text({x:w/2,y:d+142},'정/후/좌/우 = 정면/후면/왼쪽/오른쪽 벽',{size:9}));
  output.push(text({x:w/2,y:-120},'정면벽 · Z=0',{size:12,color:ink.wall}),text({x:w/2,y:d+85},'후면벽',{size:11}),text({x:-35,y:d/2},'왼쪽벽 · X=0',{size:10,extra:`transform="rotate(-90 -35 ${d/2})"`}));
  // A scale bar is useful after a PDF is resized; printed dimensions remain
  // authoritative, so the drawing never claims a fixed paper scale.
  const bar={x:0,y:d+120};output.push(`<g stroke="${ink.wall}" stroke-width="1.2"><path d="M0 ${bar.y-4}V${bar.y+4}M0 ${bar.y}H100M100 ${bar.y-4}V${bar.y+4}M50 ${bar.y-3}V${bar.y+3}"/></g>`,text({x:50,y:bar.y-8},'1m',{size:10,color:ink.wall}),text({x:w,y:bar.y},'단위 cm · 모서리 기준',{anchor:'end',size:11,color:ink.wall}));
  const minX=Math.min(...extents.map(p=>p.x)),minY=Math.min(...extents.map(p=>p.y)),maxX=Math.max(...extents.map(p=>p.x)),maxY=Math.max(...extents.map(p=>p.y)),viewBox={x:minX,y:minY,w:maxX-minX,h:maxY-minY};
  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}" width="${viewBox.w}" height="${viewBox.h}" role="img" aria-label="가구 끝모서리 치수를 표시한 CAD 배치도" style="font-family:Arial,'Malgun Gothic','Noto Sans KR',sans-serif"><rect x="${minX}" y="${minY}" width="${viewBox.w}" height="${viewBox.h}" fill="${ink.bg}"/><g fill="none" stroke-linecap="square" stroke-linejoin="miter">${output.join('')}</g></svg>`;
- return{svg,viewBox,data,visibleCorners,background:ink.bg};
+ return{svg,viewBox,data,visibleCorners,visibleWalls,background:ink.bg};
 }

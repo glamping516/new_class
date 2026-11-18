@@ -20,3 +20,14 @@ test('SVG safely escapes user names and supports custom room sizes and empty lay
 test('fixed equipment footprints point inward from every wall',()=>{
  const fixture={offset:1,w:2};assert.deepEqual(fixturePlan({...fixture,wall:'front'},room),{x:2,z:0,angle:0});assert.deepEqual(fixturePlan({...fixture,wall:'back'},room),{x:2,z:12,angle:Math.PI});assert.deepEqual(fixturePlan({...fixture,wall:'left'},room),{x:0,z:2,angle:Math.PI/2});assert.deepEqual(fixturePlan({...fixture,wall:'right'},room),{x:9,z:2,angle:-Math.PI/2});
 });
+
+test('CAD displays every object wall corner and carries all measurements into the exported vector',()=>{
+ const output=cadDrawing(state);assert.equal(output.visibleWalls.length,24);assert.equal((output.svg.match(/class="cad-wall-corner"/g)||[]).length,24);
+ const focused=cadDrawing(state,{scope:'selected',selectedId:'b',wallDirection:'front'});assert.equal(focused.visibleWalls.length,2);assert(focused.visibleWalls.every(m=>m.from==='b'&&m.wall==='front'));
+ assert.equal(cadDrawing(state,{walls:false}).visibleWalls.length,0);
+});
+
+test('raised wall boards and fixed sinks are included without moving their source geometry',()=>{
+ const custom={...state,items:[{id:'board',type:'whiteboardEnamelMatte480x240',x:4.5,z:.0175,y:.15,rot:0}],fixtures:[...state.fixtures,{id:'sink',kind:'sink',name:'싱크대',wall:'right',offset:.3,w:1.2,depth:.6,h:.85}]},before=JSON.stringify(custom),output=cadDrawing(custom);
+ assert.equal(output.visibleWalls.filter(m=>m.from==='board').length,8);assert.equal(output.visibleWalls.filter(m=>m.from==='fixed-sink').length,8);assert.equal(JSON.stringify(custom),before);
+});

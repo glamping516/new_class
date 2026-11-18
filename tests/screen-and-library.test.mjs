@@ -44,10 +44,10 @@ test('CPU side-wall cladding paints over the base wall despite differing panel c
 });
 
 test('expanded library has unique items, product board dimensions and non-PC counseling furniture',()=>{
- assert.equal(CATALOG.length,58);assert.equal(new Set(CATALOG.map(c=>c.type)).size,CATALOG.length);
+ assert.equal(CATALOG.length,59);assert.equal(new Set(CATALOG.map(c=>c.type)).size,CATALOG.length);
  for(const c of CATALOG)assert(c.dims.length===3&&c.dims.every(v=>Number.isFinite(v)&&v>0));
- assert.deepEqual(CATALOG.filter(c=>isWallBoard(c.type)).map(c=>c.boardFace),[[.9,.6],[1.2,.9],[1.5,.9],[1.8,.9],[1.8,1.2],[2.4,1.2]]);
- for(const c of CATALOG.filter(c=>c.category==='whiteboard'))assert(c.sourceUrl.startsWith('https://'));
+ assert.deepEqual(CATALOG.filter(c=>isWallBoard(c.type)).map(c=>c.boardFace),[[.9,.6],[1.2,.9],[1.5,.9],[1.8,.9],[1.8,1.2],[2.4,1.2],[4.8,2.4]]);
+ for(const c of CATALOG.filter(c=>c.category==='whiteboard'&&c.boardFinish!=='matte-enamel'))assert(c.sourceUrl.startsWith('https://'));
  for(const c of CATALOG.filter(c=>c.category==='consult'))assert.equal(isDesk(c.type),false);
 });
 
@@ -122,4 +122,14 @@ test('desktop printer fits rotated tabletops at their actual height and refuses 
  assert.equal(placePrinterOnDesk(printer,[{...desk,dims:[.3,.3,.72]}],room,CATALOG,{nearest:true}),null);
  assert.equal(placePrinterOnDesk(printer,[desk],{...room,h:.9},CATALOG,{nearest:true}),null);
  assert.equal(placePrinterOnDesk(printer,[{...desk,type:'sofaCompact'}],room,CATALOG,{nearest:true}),null);
+});
+
+test('large enamel board uses a matte surface and the requested size, including resized geometry',()=>{
+ const spec=CATALOG.find(c=>c.type==='whiteboardEnamelMatte480x240');assert.deepEqual(spec.dims,[4.8,.035,2.4]);assert.equal(spec.wallMounted,true);
+ const boardKit={...kit,material:(color,options={})=>new THREE.MeshStandardMaterial({color,...options})};
+ for(const dims of [spec.dims,[6,.04,2.2]]){const model=buildExtraModel(spec,dims,boardKit),face=model.getObjectByName('whiteboardSurface'),size=new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3());close(face.material.roughness,.94);close(size.x,dims[0]);close(size.y,dims[2]);}
+});
+test('large board mounts behind the screen and remains inside the room and ceiling after resizing',()=>{
+ const room={w:9,d:12,h:2.7},spec=CATALOG.find(c=>c.type==='whiteboardEnamelMatte480x240'),screen={type:'screen',x:4.5,z:.08,rot:0};
+ for(const dims of [spec.dims,[5.4,.04,2.3]]){const placed=mountBoardBehindScreen({id:'board',type:spec.type,x:1,z:1,y:.15,rot:0,dims},screen,room,CATALOG),b=bounds(placed,CATALOG);close(b.maxX-b.minX,dims[0]);assert(b.minZ>=-1e-9&&b.minZ<.01);assert(placed.y+dims[2]<=room.h);close(placed.x,screen.x);}
 });
