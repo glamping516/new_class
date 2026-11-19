@@ -68,9 +68,8 @@ export function buildExtraModel(spec,dims,kit,options={}){
  }else if(spec.model==='whiteboard'||spec.model==='mobileBoard'){
   g.userData.wallPanel=true;
   const mobile=spec.model==='mobileBoard',bw=mobile?w*spec.boardFace[0]/spec.dims[0]:w,bh=mobile?h*spec.boardFace[1]/spec.dims[2]:h,base=mobile?h*.4:0,boardD=mobile?.035:d;
-  box(g,bw,bh,boardD,0,base+bh/2,0,mats.frame);
-  const matte=spec.boardFinish==='matte-enamel',face=box(g,bw-.045,bh-.045,boardD*.28,0,base+bh/2,boardD*.34,material(matte?'#f7f8f4':'#fbfcf7',{roughness:matte?.94:.27,metalness:matte?.02:0}));face.name='whiteboardSurface';
-  if(!matte)for(const [x,y,color]of [[-bw*.40,base+bh*.85,'#8baba0'],[-bw*.35,base+bh*.85,'#a8b4c6']])cylinder(g,.014,.014,.006,x,y,boardD*.55,material(color),12).rotation.x=Math.PI/2;
+  box(g,bw,bh,boardD,0,base+bh/2,0,mats.frame);box(g,bw-.045,bh-.045,boardD*.28,0,base+bh/2,boardD*.34,material('#fbfcf7',{roughness:.27}));
+  for(const [x,y,color]of [[-bw*.40,base+bh*.85,'#8baba0'],[-bw*.35,base+bh*.85,'#a8b4c6']])cylinder(g,.014,.014,.006,x,y,boardD*.55,material(color),12).rotation.x=Math.PI/2;
   box(g,.09,.023,.008,bw*.30,base+.06,boardD*.57,frame);
   if(mobile){for(const x of [-w*.45,w*.45]){box(g,.028,h-.05,.028,x,(h-.05)/2,0,frame);box(g,.065,.03,d,x,.04,0,frame);for(const z of [-d*.37,d*.37]){const wheel=cylinder(g,.032,.032,.025,x,.032,z,mats.dark,12);wheel.rotation.z=Math.PI/2;}}box(g,w*.9,.025,.04,0,h*.36,0,frame);}
  }

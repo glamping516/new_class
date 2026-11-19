@@ -37,8 +37,6 @@ export const EXTRA_CATALOG=[
   `whiteboardWall${w}x${h}`,`벽걸이 보드 · ${w}×${h}`,[w/100,.035,h/100],'whiteboard','whiteboard',
   {wallMounted:true,defaultElevation:h===120?.95:1.1,note:'제품 표기 규격 · 두께 추정',sourceUrl:boardSource,sourceName:'두문 · 드림오피스 판매 규격',boardFace:[w/100,h/100]}
  )),
- planned('whiteboardEnamelMatte480x240','무광 법랑 화이트보드 · 480×240',[4.8,.035,2.4],'whiteboard','whiteboard',
-  {wallMounted:true,defaultElevation:.15,boardFace:[4.8,2.4],boardFinish:'matte-enamel',note:'사용자 지정 · 무광 법랑 · 크기 조절'}),
  planned('whiteboardMobile120','이동식 보드 · 판면 120×90',[1.25,.6,1.8],'whiteboard','mobileBoard',
   {boardFace:[1.2,.9],note:'판면 제품 규격 · 받침 추정',sourceUrl:'https://hd2.co.kr/product/detail.html?product_no=35113',sourceName:'현대오피스 · 판면 1200×900mm'})
 ];
