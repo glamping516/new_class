@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {tapePlan,tapeDeskGrid,nearestWallReferences,objectPairMeasurement,tapeLabelLayout} from '../dist/tape-plan.mjs';
+import {uniqueMeasurements,tapePlan,tapeDeskGrid,nearestWallReferences,objectPairMeasurement,tapeLabelLayout} from '../dist/tape-plan.mjs';
 import {cadDrawing} from '../dist/cad-plan.mjs';
 import {classroomFloorBoxes} from '../dist/floor-boxes.mjs';
 const room={w:9,d:12,h:2.7};
@@ -41,4 +41,16 @@ test('CAD defaults to practical dimensions and keeps essential panel offsets whe
  const normal=cadDrawing(state);assert.equal(normal.visibleWalls.length,0);assert.equal((normal.svg.match(/class="cad-reference-dimension"/g)||[]).length,normal.references.length*2);assert.equal(normal.visibleCorners.length,7);assert.equal(normal.references.filter(r=>r.item.panel).length,14);
  const reduced=cadDrawing(state,{walls:false,dimensions:false,labels:false,terminals:false});assert.equal(reduced.references.length,14);assert.equal(reduced.visibleCorners.length,0);assert(reduced.svg.includes('판넬')||reduced.svg.includes('좌'));
  const pair=cadDrawing(state,{pairFrom:'desk0',pairTo:'desk17'});assert(pair.pair.distance>0);assert(pair.svg.includes('class="cad-pair-distance"'));
+});
+
+test('duplicate segments merge reversed endpoints and retain distinct panel positions',()=>{
+ const a={from:'p1',referenceCode:'01',wall:'left',a:{x:1,z:2},b:{x:0,z:2},distance:1};
+ const b={...a,from:'p2',referenceCode:'02',a:a.b,b:a.a};const c={...a,from:'p3',referenceCode:'03',a:{x:1,z:3},b:{x:0,z:3}};
+ const original=JSON.stringify([a,b,c]),result=uniqueMeasurements([a,b,c]);assert.equal(result.length,2);assert.equal(result[0].referenceCode,'01/02');assert.equal(result[1].referenceCode,'03');assert.equal(JSON.stringify([a,b,c]),original);
+ const pair={...a,wall:undefined,kind:'pair'},normal={...pair,kind:'desk-corner'};assert.equal(uniqueMeasurements([normal,pair])[0].kind,'pair');
+});
+test('equal grid gap numbers appear once while every endpoint and unequal gap remains',()=>{
+ const data=tapePlan(state);assert.equal(data.measurements.length,7);assert.equal(data.measurements.filter(m=>!m.hideLabel).length,2);assert(data.measurements[0].label.includes('동일 5곳'));assert(data.measurements[5].label.includes('동일 2곳'));
+ const shifted=desks.map((d,n)=>({...d,z:d.z+(n>=9?.1:0)}));const varied=tapePlan({...state,items:shifted});assert.equal(varied.measurements.filter(m=>m.kind==='row'&&!m.hideLabel).length,2);assert.equal(varied.references.filter(r=>r.terminal).length,13);
+ const drawing=cadDrawing(state);assert.equal((drawing.svg.match(/행 간격 · 동일 5곳/g)||[]).length,1);
 });

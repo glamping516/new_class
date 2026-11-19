@@ -40,13 +40,23 @@ export function tapeDeskGrid(items,room,catalog=CATALOG){
  for(let n=1;n<columns.length;n++){const a=columns[n-1],b=columns[n],z=result[0].front-.25;measurements.push({key:`tape-column-${n}`,kind:'object',label:`${n}–${n+1}열`,a:{x:a.maxX,z},b:{x:b.minX,z},distance:Math.max(0,b.minX-a.maxX)});}
  return{rows:result,columns,ids:desks.map(i=>i.id),measurements};
 }
+// Physical endpoints define duplication; equal numbers at different positions do not.
+export function dimensionKey(m){const point=p=>[p.x,p.z].map(v=>Math.round(v*1e6)).join(',');return[m.wall||'gap',... [point(m.witnessA||m.a),point(m.witnessB||m.b)].sort(),Math.round(m.distance*1e6)].join('|');}
+export function uniqueMeasurements(measurements){
+ const seen=new Map();for(const m of [...measurements].sort((a,b)=>(b.kind==='pair')-(a.kind==='pair'))){const key=dimensionKey(m),existing=seen.get(key);if(existing){if(m.referenceCode)existing.referenceCode=[...new Set((existing.referenceCode||'').split('/').filter(Boolean).concat(m.referenceCode.split('/')))].join('/');continue;}seen.set(key,{...m});}return[...seen.values()];
+}
+function sharedGapLabels(measurements){
+ const groups=new Map();for(const m of measurements){const axis=m.kind==='row'?'행':'열',key=[axis,Math.round(m.distance*1e6),Math.round((m.overlap||0)*1e6)].join(':');if(!groups.has(key))groups.set(key,[]);groups.get(key).push(m);}
+ for(const group of groups.values())if(group.length>1){group[0].label=(group[0].kind==='row'?'행':'열')+' 간격 · 동일 '+group.length+'곳';for(const m of group.slice(1))m.hideLabel=true;}
+ return measurements;
+}
 export function tapePlan(state,catalog=CATALOG){
  const objects=measurementObjects(state,catalog),grid=tapeDeskGrid(state.items,state.room,catalog),grouped=new Set(grid?.ids||[]);
  const references=objects.filter(i=>!grouped.has(i.id)).map(i=>({...i,refs:nearestWallReferences(i,state.room,catalog)}));
  const cues=[];
  if(grid){for(const r of grid.rows)cues.push({key:'row-'+r.number,x:grid.columns[0].minX-.25,z:r.front,text:`${r.number}행 · 정 ${tapeCm(r.front)}`,kind:'row',align:'end'});for(const c of grid.columns)cues.push({key:'col-'+c.number,x:c.minX,z:grid.rows[0].front-.48,text:`${c.number}열 · 좌 ${tapeCm(c.minX)}`,kind:'column',align:'start'});}
  for(const cue of cues){const row=cue.kind==='row',n=Number(cue.key.split('-')[1])-1;cue.a=row?{x:grid.columns[0].minX,z:0}:{x:0,z:grid.rows[0].front};cue.b=row?{x:grid.columns[0].minX,z:grid.rows[n].front}:{x:grid.columns[n].minX,z:grid.rows[0].front};cue.distance=row?cue.b.z:cue.b.x;}
- return{objects,grid,references,cues,measurements:grid?.measurements||[]};
+ return{objects,grid,references,cues,measurements:sharedGapLabels(grid?.measurements||[])};
 }
 
 function footprint(i,catalog){

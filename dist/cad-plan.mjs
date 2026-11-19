@@ -2,7 +2,7 @@ import {CATALOG,isDesk} from './furniture.mjs';
 import {bounds,corners,dimsOf} from './geometry.mjs';
 import {deskCornerMeasurements,hasDeskCorners} from './desk-corners.mjs';
 import {wallCornerMeasurements,fixedWallMeasurementItems} from './wall-corners.mjs';
-import {tapePlan,tapeLabelLayout,objectPairMeasurement,nearestWallReferences} from './tape-plan.mjs';
+import {tapePlan,tapeLabelLayout,uniqueMeasurements,dimensionKey,objectPairMeasurement,nearestWallReferences} from './tape-plan.mjs';
 import {floorboxRecords} from './construction-data.mjs';
 
 export const cadNumber=value=>Number((value*100).toFixed(2)).toLocaleString('ko-KR',{maximumFractionDigits:2});
@@ -48,6 +48,7 @@ export function cadDrawing(state,options={},catalog=CATALOG){
   extents.push(a,b);output.push(line(a,b,color,wallCorner?'stroke-width=".6" stroke-dasharray="3 3" opacity=".45"':'stroke-width=".85"'));
   for(const p of [a,b])output.push(line({x:p.x-tx-dx*2,y:p.y-ty-dy*2},{x:p.x+tx+dx*2,y:p.y+ty+dy*2},color,'stroke-width="1.1"'));
   if(witnesses)for(const p of [a,b])output.push(`<circle cx="${p.x}" cy="${p.y}" r="1.9" fill="${color}" stroke="none"/>`);
+  if(value===null)return;
   if(wallCorner){const dir=({front:{x:0,y:-1},back:{x:0,y:1},left:{x:-1,y:0},right:{x:1,y:0}})[wallCorner.wall],step=Math.min(18,length/2);label(a,b,value,color,{at:{x:a.x+dir.x*step,y:a.y+dir.y*step},normal:{x:-dir.y,y:dir.x},size:10.5});}else label(a,b,value,color);
  };
  const offsetDimension=(a,b,offset,value,color=ink.wallDim)=>{
@@ -81,16 +82,16 @@ export function cadDrawing(state,options={},catalog=CATALOG){
   output.push('</g>');
  }
  if(o.terminals||!o.detail)for(const f of data.records){const p=xy(f),iw=f.w*100,id=f.depth*100;output.push(`<g data-cad-item="terminal-${cadEscape(f.id)}" tabindex="0" role="button" aria-label="단자함 ${f.code} 도면 선택" fill="none" stroke="${ink.port}" stroke-width="1"><rect x="${p.x-iw/2}" y="${p.y-id/2}" width="${iw}" height="${id}"/><path d="M${p.x-4} ${p.y}H${p.x+4}M${p.x} ${p.y-4}V${p.y+4}"/><path d="M${p.x} ${p.y-id/2}V${p.y-19}" stroke-width=".6"/></g>`,'');}
+ const pair=objectPairMeasurement(data.tape.objects.find(i=>i.id===o.pairFrom),data.tape.objects.find(i=>i.id===o.pairTo),catalog);
  const visibleCorners=o.dimensions?(o.detail&&selected?data.corners.filter(m=>m.from===selected.id||m.to===selected.id):data.tape.measurements):[];
- for(const m of visibleCorners)dimension(xy(m.a),xy(m.b),(m.overlapping?'겹침 · ':m.label&&m.kind!=='desk-corner'?m.label+' ':'')+cadNumber(m.distance),m.overlapping?'#b35d42':ink.dim,{witnesses:true});
+ for(const m of uniqueMeasurements(visibleCorners).filter(m=>!pair||dimensionKey(m)!==dimensionKey(pair)))dimension(xy(m.a),xy(m.b),m.hideLabel?null:(m.overlapping?'겹침 · ':m.label&&m.kind!=='desk-corner'?m.label+' ':'')+cadNumber(m.distance),m.overlapping?'#b35d42':ink.dim,{witnesses:true});
  const visibleWalls=o.detail&&selected&&o.walls?data.walls.filter(m=>m.from===selected.id&&(o.wallDirection==='all'||m.wall===o.wallDirection)):[];
- for(const m of visibleWalls){output.push(`<g class="cad-wall-corner" data-from="${cadEscape(m.from)}" data-wall="${m.wall}" data-corner="${m.corner??'edge'}"><title>${cadEscape(m.objectName+' · '+m.label+' · '+cadNumber(m.distance)+'cm')}</title>`);dimension(xy(m.a),xy(m.b),m.wallCode+' '+cadNumber(m.distance),ink.wallDim,{witnesses:true,wallCorner:m});output.push('</g>');}
+ for(const m of visibleWalls){if(selected&&nearestWallReferences(selected,state.room,catalog).some(r=>dimensionKey(r)===dimensionKey(m)))continue;output.push(`<g class="cad-wall-corner" data-from="${cadEscape(m.from)}" data-wall="${m.wall}" data-corner="${m.corner??'edge'}"><title>${cadEscape(m.objectName+' · '+m.label+' · '+cadNumber(m.distance)+'cm')}</title>`);dimension(xy(m.a),xy(m.b),m.wallCode+' '+cadNumber(m.distance),ink.wallDim,{witnesses:true,wallCorner:m});output.push('</g>');}
  const refsPlan=selected&&!data.tape.references.some(i=>i.id===selected.id)?{...data.tape,references:[...data.tape.references,{...selected,refs:nearestWallReferences(selected,state.room,catalog)}]}:data.tape;
  const references=tapeLabelLayout(refsPlan,(x,z)=>xy({x,z}),{selectedIds:o.scope==='selected'&&selected?[selected.id]:[],ordinary:o.walls,fontSize:10.5,occupied});
- const referenceLanes=new Map();
- for(const r of references){const {item}=r,color=item.panel?ink.port:ink.wallDim;output.push(`<g class="cad-tape-reference" data-reference="${cadEscape(item.id)}" data-panel="${!!item.panel}"><title>${cadEscape(item.name)}</title>`);for(const m of item.refs){output.push(`<g class="cad-reference-dimension" data-wall="${m.wall}">`);const horizontal=['left','right'].includes(m.wall),key=m.wall+':'+(horizontal?m.a.z:m.a.x).toFixed(4),lane=referenceLanes.get(key)||0;referenceLanes.set(key,lane+1);offsetDimension(xy(m.a),xy(m.b),[8,-8,22,-22,36,-36][lane%6],item.code+' · '+m.wallCode+' '+cadNumber(m.distance)+'cm',color);output.push('</g>');}output.push('</g>');}
+ const referenceLanes=new Map(),referenceDimensions=uniqueMeasurements(references.flatMap(r=>r.item.refs.map(m=>({...m,referenceCode:r.item.code}))));
+ for(const r of references){const {item}=r,color=item.panel?ink.port:ink.wallDim;output.push(`<g class="cad-tape-reference" data-reference="${cadEscape(item.id)}" data-panel="${!!item.panel}"><title>${cadEscape(item.name)}</title>`);for(const m of referenceDimensions.filter(m=>m.from===item.id)){output.push(`<g class="cad-reference-dimension" data-wall="${m.wall}">`);const horizontal=['left','right'].includes(m.wall),key=m.wall+':'+(horizontal?m.a.z:m.a.x).toFixed(4),lane=referenceLanes.get(key)||0;referenceLanes.set(key,lane+1);offsetDimension(xy(m.a),xy(m.b),[8,-8,22,-22,36,-36][lane%6],m.referenceCode+' · '+m.wallCode+' '+cadNumber(m.distance)+'cm',color);output.push('</g>');}output.push('</g>');}
  if(o.dimensions)for(const cue of data.tape.cues){output.push(`<g class="cad-tape-cue" data-cue="${cue.key}">`);const row=cue.kind==='row',n=Number(cue.key.split('-')[1])-1;offsetDimension(xy(cue.a),xy(cue.b),-((row?cue.a.x:cue.a.z)*100+22+n*14),cue.text+'cm',ink.dim);output.push('</g>');}
- const pair=objectPairMeasurement(data.tape.objects.find(i=>i.id===o.pairFrom),data.tape.objects.find(i=>i.id===o.pairTo),catalog);
  if(pair){output.push(`<g class="cad-pair-distance" data-from="${cadEscape(pair.from)}" data-to="${cadEscape(pair.to)}">`);dimension(xy(pair.a),xy(pair.b),(pair.overlapping?'겹침 · ':'A↔B ')+cadNumber(pair.distance)+'cm',ink.select,{witnesses:true});output.push('</g>');}
  // Opening positions and widths form a CAD-style chain along each wall.
  if(o.detail)for(const wall of ['front','back','left','right']){
