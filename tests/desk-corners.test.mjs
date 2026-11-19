@@ -33,10 +33,19 @@ test('touching corners report zero and overlapping desktops are explicitly marke
  assert(deskPairCorners(a,desk('b',2,3.4)).every(m=>m.overlapping));
 });
 test('hidden and raised objects are excluded; rectangular consultation tables are supported',()=>{
- const items=[desk('a',2,3),desk('b',2,4.5,{type:'consultRect140'}),desk('c',5,3,{hidden:true}),desk('d',5,3,{y:.8})];
+ const items=[desk('a',2,3),desk('b',2,4.5,{type:'consultRect140',dims:[1.5,.7,.72]}),desk('c',5,3,{hidden:true}),desk('d',5,3,{y:.8})];
  const lines=deskCornerMeasurements(items);assert.equal(lines.length,2);assert(lines.every(m=>[m.from,m.to].includes('b')));
 });
 test('front/back-only measurements follow the screen when it faces a side wall',()=>{
  const items=[desk('a',2,3,{rot:90}),desk('b',3.4,3,{rot:90}),desk('c',2,5,{rot:90}),{id:'screen',type:'screen',rot:90,x:0,z:0}];
  const lines=deskCornerMeasurements(items,CATALOG,{frontBackOnly:true});assert.equal(lines.length,2);assert(lines.every(m=>m.from==='a'&&m.to==='b'));for(const m of lines)close(m.distance,.8);
+});
+
+test('offset desks omit diagonal corner dimensions and keep perpendicular gaps',()=>{
+ const a=desk('a',2,3),offset=desk('b',2.2,4.27),aligned=desk('c',4.85,3);
+ const snapshot=JSON.stringify([a,offset,aligned]),lines=deskCornerMeasurements([a,offset,aligned]);
+ assert(!lines.some(m=>m.from==='a'&&m.to==='b'));
+ assert(lines.some(m=>m.from==='a'&&m.to==='c'));
+ for(const m of lines)assert(Math.abs(m.a.x-m.b.x)<1e-6||Math.abs(m.a.z-m.b.z)<1e-6);
+ assert.equal(JSON.stringify([a,offset,aligned]),snapshot);
 });

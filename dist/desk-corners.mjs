@@ -1,4 +1,4 @@
-import {bounds,corners,objectGap,overlaps} from './geometry.mjs';
+import {bounds,corners,objectGap,overlaps,isOrthogonalDimension} from './geometry.mjs';
 import {CATALOG,isDesk} from './furniture.mjs';
 
 export function hasDeskCorners(item,catalog=CATALOG){
@@ -41,5 +41,5 @@ export function deskCornerMeasurements(items,catalog=CATALOG,{selectedIds=[],fro
   const horizontal=Math.abs(second.x-first.x)>Math.abs(second.z-first.z),ends=deskPairCorners(first,second,catalog).sort((a,b)=>horizontal?(a.a.z+a.b.z)-(b.a.z+b.b.z):(a.a.x+a.b.x)-(b.a.x+b.b.x));
   ends.forEach((line,n)=>result.push({...line,key:`desk-corner:${key}:${n}`,pairKey:key,kind:'desk-corner',from:first.id,to:second.id,end:n,axis:horizontal?'x':'z',endLabel:horizontal?(n?'뒤끝':'앞끝'):(n?'오른쪽 끝':'왼쪽 끝'),label:`${first.name||catalog.find(c=>c.type===first.type)?.name||first.id} ↔ ${second.name||catalog.find(c=>c.type===second.type)?.name||second.id} · ${horizontal?(n?'뒤끝':'앞끝'):(n?'오른쪽 끝':'왼쪽 끝')}`}));
  }
- return result;
+ return result.filter(isOrthogonalDimension);
 }

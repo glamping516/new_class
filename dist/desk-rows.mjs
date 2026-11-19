@@ -1,4 +1,4 @@
-import {bounds,corners} from './geometry.mjs';
+import {bounds,corners,isOrthogonalDimension} from './geometry.mjs';
 import {isDesk} from './furniture.mjs';
 
 // Rows run from the front wall (Z=0) toward the entrance wall. Small placement
@@ -35,5 +35,5 @@ export function deskFrontBackMeasurements(items,catalog,{includeAll=false}={}){
   const u=(Math.max(front.minU,back.minU)+Math.min(front.maxU,back.maxU))/2,a=section(front.polygon,u),b=section(back.polygon,u),gap=b.front-a.back;
   measurements.push({key:`desk-depth-${front.item.id}-${back.item.id}`,kind:'desk-depth',from:front.item.id,to:back.item.id,label:`${front.item.name||front.item.id} 뒤끝 → ${back.item.name||back.item.id} 앞끝`,distance:Math.max(0,gap),overlap:Math.max(0,-gap),a:world(u,a.back),b:world(u,b.front)});
  }
- return measurements;
+ return measurements.filter(isOrthogonalDimension);
 }
