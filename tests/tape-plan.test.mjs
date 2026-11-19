@@ -8,15 +8,15 @@ const desk=(id,x,z,extra={})=>({id,type:'computerDesk',x,z,rot:0,...extra});
 const desks=Array.from({length:18},(_,n)=>desk('desk'+n,1.55+n%3*2.85,3.15+Math.floor(n/3)*1.27));
 const state={room,items:[...desks,{id:'partition',type:'partition140',x:3.3,z:1.95,rot:0}],fixtures:classroomFloorBoxes([],room)};
 const close=(a,b,t=1e-8)=>assert(Math.abs(a-b)<t,`${a} != ${b}`);
-test('a repeated classroom uses six row and three column tape offsets with seven gap lines',()=>{
- const before=JSON.stringify(state),data=tapePlan(state);assert.equal(data.grid.rows.length,6);assert.equal(data.grid.columns.length,3);assert.equal(data.grid.ids.length,18);assert.equal(data.measurements.length,7);assert.equal(data.cues.length,9);
+test('a repeated classroom measures every horizontal and vertical neighbour with only two wall anchors',()=>{
+ const before=JSON.stringify(state),data=tapePlan(state);assert.equal(data.grid.rows.length,6);assert.equal(data.grid.columns.length,3);assert.equal(data.grid.ids.length,18);assert.equal(data.measurements.length,27);assert.equal(data.cues.length,2);
  close(data.grid.rows[0].front,2.85);close(data.grid.rows[5].front,9.2);assert.deepEqual(data.grid.columns.map(c=>Number(c.minX.toFixed(2))),[.8,3.65,6.5]);
- for(const m of data.measurements)close(m.distance,m.kind==='row'?.67:1.35);
+ for(const m of data.measurements)close(m.distance,m.axis==='z'?.67:1.35);
  assert.equal(JSON.stringify(state),before);
 });
 test('incomplete, misaligned and rotated grids keep individual references instead of assuming repeated positions',()=>{
  assert.equal(tapeDeskGrid(desks.slice(1),room),null);assert.equal(tapeDeskGrid(desks.map((i,n)=>n===7?{...i,x:i.x+.05}:i),room),null);assert.equal(tapeDeskGrid(desks.map((i,n)=>n===0?{...i,rot:5}:i),room),null);
- const data=tapePlan({...state,items:desks.slice(1)});assert.equal(data.references.filter(r=>r.type==='computerDesk').length,17);
+ const data=tapePlan({...state,items:desks.slice(1)});assert.equal(data.references.filter(r=>r.type==='computerDesk').length,17);assert(data.measurements.some(m=>m.axis==='x'));assert(data.measurements.some(m=>m.axis==='z'));const defaultLabels=tapeLabelLayout(data,(x,z)=>({x:x*100,y:z*100}));assert(defaultLabels.every(r=>r.item.panel));
 });
 test('every floor panel and partition retains two nearest-wall edge offsets',()=>{
  const data=tapePlan(state),terminals=data.references.filter(r=>r.terminal);assert.equal(terminals.length,13);assert(terminals.every(r=>r.refs.length===2));
@@ -38,7 +38,7 @@ test('round-table pair distances use circular edges and preserve distances under
  const turned=objectPairMeasurement({...a,rot:45},{...b,rot:45});close(turned.horizontal,2);close(turned.vertical,0);
 });
 test('CAD defaults to practical dimensions and keeps essential panel offsets when optional layers are off',()=>{
- const normal=cadDrawing(state);assert.equal(normal.visibleWalls.length,0);assert.equal((normal.svg.match(/class="cad-reference-dimension"/g)||[]).length,normal.references.length*2);assert.equal(normal.visibleCorners.length,7);assert.equal(normal.references.filter(r=>r.item.panel).length,14);
+ const normal=cadDrawing(state);assert.equal(normal.visibleWalls.length,0);assert.equal((normal.svg.match(/class="cad-reference-dimension"/g)||[]).length,normal.references.length*2);assert.equal(normal.visibleCorners.length,27);assert.equal(normal.references.filter(r=>r.item.panel).length,14);
  const reduced=cadDrawing(state,{walls:false,dimensions:false,labels:false,terminals:false});assert.equal(reduced.references.length,14);assert.equal(reduced.visibleCorners.length,0);assert(reduced.svg.includes('판넬')||reduced.svg.includes('좌'));
  const pair=cadDrawing(state,{pairFrom:'desk0',pairTo:'desk17'});assert(pair.pair.distance>0);assert(pair.svg.includes('class="cad-pair-distance"'));
 });
@@ -50,7 +50,7 @@ test('duplicate segments merge reversed endpoints and retain distinct panel posi
  const pair={...a,wall:undefined,kind:'pair'},normal={...pair,kind:'desk-corner'};assert.equal(uniqueMeasurements([normal,pair])[0].kind,'pair');
 });
 test('equal grid gap numbers appear once while every endpoint and unequal gap remains',()=>{
- const data=tapePlan(state);assert.equal(data.measurements.length,7);assert.equal(data.measurements.filter(m=>!m.hideLabel).length,2);assert(data.measurements[0].label.includes('동일 5곳'));assert(data.measurements[5].label.includes('동일 2곳'));
- const shifted=desks.map((d,n)=>({...d,z:d.z+(n>=9?.1:0)}));const varied=tapePlan({...state,items:shifted});assert.equal(varied.measurements.filter(m=>m.kind==='row'&&!m.hideLabel).length,2);assert.equal(varied.references.filter(r=>r.terminal).length,13);
- const drawing=cadDrawing(state);assert.equal((drawing.svg.match(/행 간격 · 동일 5곳/g)||[]).length,1);
+ const data=tapePlan(state);assert.equal(data.measurements.length,27);assert.equal(data.measurements.filter(m=>!m.hideLabel).length,9);assert.equal(data.measurements.filter(m=>m.axis==='x').length,12);assert.equal(data.measurements.filter(m=>m.axis==='z').length,15);assert(data.measurements.some(m=>m.label.includes('5곳 동일')));assert(data.measurements.some(m=>m.label.includes('2곳 동일')));
+ const shifted=desks.map((d,n)=>({...d,z:d.z+(n>=9?.1:0)}));const varied=tapePlan({...state,items:shifted});assert.equal(varied.measurements.filter(m=>m.axis==='z'&&!m.hideLabel).length,6);assert.equal(varied.references.filter(r=>r.terminal).length,13);
+ const drawing=cadDrawing(state);assert.equal((drawing.svg.match(/세로 · 5곳 동일/g)||[]).length,3);
 });

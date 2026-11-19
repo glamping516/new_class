@@ -3,7 +3,7 @@ import {bounds,corners,dimsOf,wallGaps} from './geometry.mjs';
 import {wallCornerMeasurements,fixedWallMeasurementItems} from './wall-corners.mjs';
 import {floorboxRecords} from './construction-data.mjs';
 import {hasDeskCorners} from './desk-corners.mjs';
-import {deskPairCorners} from './desk-corners.mjs';
+import {deskCornerMeasurements,deskPairCorners} from './desk-corners.mjs';
 
 export const tapeCm=v=>Number((v*100).toFixed(2)).toLocaleString('ko-KR',{maximumFractionDigits:2});
 const roundSpec=c=>['roundTable','stool'].includes(c?.model)||(c?.model==='bin'&&c.style==='pedal');
@@ -45,18 +45,20 @@ export function dimensionKey(m){const point=p=>[p.x,p.z].map(v=>Math.round(v*1e6
 export function uniqueMeasurements(measurements){
  const seen=new Map();for(const m of [...measurements].sort((a,b)=>(b.kind==='pair')-(a.kind==='pair'))){const key=dimensionKey(m),existing=seen.get(key);if(existing){if(m.referenceCode)existing.referenceCode=[...new Set((existing.referenceCode||'').split('/').filter(Boolean).concat(m.referenceCode.split('/')))].join('/');continue;}seen.set(key,{...m});}return[...seen.values()];
 }
-function sharedGapLabels(measurements){
- const groups=new Map();for(const m of measurements){const axis=m.kind==='row'?'행':'열',key=[axis,Math.round(m.distance*1e6),Math.round((m.overlap||0)*1e6)].join(':');if(!groups.has(key))groups.set(key,[]);groups.get(key).push(m);}
- for(const group of groups.values())if(group.length>1){group[0].label=(group[0].kind==='row'?'행':'열')+' 간격 · 동일 '+group.length+'곳';for(const m of group.slice(1))m.hideLabel=true;}
+export function practicalDeskGaps(items,catalog=CATALOG){
+ const pairs=new Map();for(const m of deskCornerMeasurements(items,catalog)){if(!pairs.has(m.pairKey))pairs.set(m.pairKey,[]);pairs.get(m.pairKey).push(m);}
+ const measurements=[];for(const ends of pairs.values()){const same=ends.length===2&&Math.abs(ends[0].distance-ends[1].distance)<1e-6;for(const m of same?ends.slice(0,1):ends)measurements.push({...m,kind:'desk-gap',label:(m.axis==='x'?'가로':'세로')+(same?'':' · '+m.endLabel)});}
+ const groups=new Map();for(const m of measurements){const lane=m.axis==='x'?m.a.z:m.a.x,key=[m.axis,Math.round(lane*1e6),Math.round(m.distance*1e6),m.overlapping].join(':');if(!groups.has(key))groups.set(key,[]);groups.get(key).push(m);}
+ for(const group of groups.values())if(group.length>1){group[0].label+=' · '+group.length+'곳 동일';for(const m of group.slice(1))m.hideLabel=true;}
  return measurements;
 }
 export function tapePlan(state,catalog=CATALOG){
  const objects=measurementObjects(state,catalog),grid=tapeDeskGrid(state.items,state.room,catalog),grouped=new Set(grid?.ids||[]);
  const references=objects.filter(i=>!grouped.has(i.id)).map(i=>({...i,refs:nearestWallReferences(i,state.room,catalog)}));
  const cues=[];
- if(grid){for(const r of grid.rows)cues.push({key:'row-'+r.number,x:grid.columns[0].minX-.25,z:r.front,text:`${r.number}행 · 정 ${tapeCm(r.front)}`,kind:'row',align:'end'});for(const c of grid.columns)cues.push({key:'col-'+c.number,x:c.minX,z:grid.rows[0].front-.48,text:`${c.number}열 · 좌 ${tapeCm(c.minX)}`,kind:'column',align:'start'});}
+ if(grid){for(const r of grid.rows.slice(0,1))cues.push({key:'row-'+r.number,x:grid.columns[0].minX-.25,z:r.front,text:`${r.number}행 · 정 ${tapeCm(r.front)}`,kind:'row',align:'end'});for(const c of grid.columns.slice(0,1))cues.push({key:'col-'+c.number,x:c.minX,z:grid.rows[0].front-.48,text:`${c.number}열 · 좌 ${tapeCm(c.minX)}`,kind:'column',align:'start'});}
  for(const cue of cues){const row=cue.kind==='row',n=Number(cue.key.split('-')[1])-1;cue.a=row?{x:grid.columns[0].minX,z:0}:{x:0,z:grid.rows[0].front};cue.b=row?{x:grid.columns[0].minX,z:grid.rows[n].front}:{x:grid.columns[n].minX,z:grid.rows[0].front};cue.distance=row?cue.b.z:cue.b.x;}
- return{objects,grid,references,cues,measurements:sharedGapLabels(grid?.measurements||[])};
+ return{objects,grid,references,cues,measurements:practicalDeskGaps(state.items,catalog)};
 }
 
 function footprint(i,catalog){
@@ -93,7 +95,7 @@ function footprintBounds(item,catalog){
 // are retained; ordinary references can be limited by an explicit selection.
 export function tapeLabelLayout(plan,project,{selectedIds=[],ordinary=true,fontSize=10.5,occupied=[]}={}){
  const selected=new Set(selectedIds),placed=occupied.map(b=>({...b})),result=[];
- for(const item of plan.references.filter(i=>i.panel||ordinary&&(!selected.size||selected.has(i.id)))){
+ for(const item of plan.references.filter(i=>i.panel||ordinary&&selected.has(i.id))){
   const anchor=project(item.refs[0]?.a.x??item.x,item.refs[0]?.a.z??item.z),text=item.refs.map(m=>m.wallCode+' '+tapeCm(m.distance)).join(' · '),width=Math.max(44,text.length*fontSize*.58+10),height=fontSize*2.5;
   let box;
   search:for(const dy of [-height-13,13,-height-30,30,-height-48,48,-height-68,68])for(const dx of [0,-width*.65,width*.65,-width,width]){const next={x:anchor.x-width/2+dx,y:anchor.y+dy,w:width,h:height};box=next;if(!placed.some(r=>next.x<r.x+r.w+3&&next.x+next.w>r.x-3&&next.y<r.y+r.h+3&&next.y+next.h>r.y-3))break search;}
